@@ -1,25 +1,22 @@
-# Shining Child Leaders School — SCL V70 Final
+# SCL V86 — Gate + Loader + Attendance Sign-In
 
-This is the final V70 single-file SCL official website package prepared for GitHub Pages deployment.
+Shining Child Leaders School (SCL) official website package.
 
-## Final V70 corrections
-- Short Break and Long Break use the same timetable colour.
-- Friday ends with the distinct **12:30 PM–1:00 PM Closing Period** colour; no academic content is filled after 1:00 PM on Friday.
-- Primary and Secondary timetables are separate and switchable, including a dedicated **Switch Primary / Secondary** control.
-- Secondary timetable teacher availability shows active teaching staff only and supports teacher-period highlighting.
-- The SCL rotating/quick logo hub is preserved and its Student Leaders, Staff Rank, Medals & Records and Anthem destinations are active.
-- The manual Day/Night control is positioned at the extreme upper-right so it no longer blocks the SCL logo hub.
-- The supplied SCL admission/school-life poster is integrated into the hero panel with the existing transparent orbit/glow effect layered over it.
-- The 38 alphabetically ordered shortcut items are wired to real SCL feature destinations.
-- The SCL Staff & School Management Portal exposes the main operational workspaces, including attendance, timetable, staff/workers, fees, results, curriculum, badges, community, service rank, branch/GPS and support tools.
-- Student Attendance visibly renders the register table with a separate green **Present** confirmation switch and a two-position **Absent / Late** control.
-- Present attendance locks after confirmation. Current-day Absent and Late can transition between those two states; Present cannot be reversed. The backend also rejects changes to a previous school day and requires every student to be called before submission.
-- Technical Administrator is recognised by the V70 frontend/backend administrator role checks as `technical_admin`, consistent with the SCL rule that Technical Administrator has unrestricted system authority. Actual credentials are never stored in this static HTML package.
-
-## Supabase backend
-The package expects the configured SCL Supabase project and existing Edge Functions. The student-attendance Edge Function was deployed as version 7 during this final pass.
+## V86 behavior
+- The branded SCL loader is displayed first on every page load.
+- After the loader completes, unauthenticated visitors see the secure public Gate.
+- LOGIN is for normal SCL platform access for all users.
+- SIGN IN is reserved for staff/teacher/worker and admin/management attendance.
+- Attendance Sign-In window: 7:00 AM–4:00 PM Africa/Lagos.
+- A person who has signed attendance remains in the platform during the workday; they do not repeatedly sign in/out to use site features.
+- Sign-out is a separate attendance action and does not log the user out of SCL.
+- In-app/browser sign-out reminders are issued near/after 4:00 PM while the authenticated site session is active. Browser notification display depends on the device/browser permission state.
+- After 4:00 PM, new attendance Sign-In entries are closed, while normal LOGIN remains available. An already signed-in worker can still open attendance to record their Sign Out.
+- First Term resumption is 7 September 2026; the public calendar also contains the 2026/2027 term dates.
+- Profile double-tap/double-click closes the profile without logging the user out.
 
 ## Deployment
-Upload `index.html` to the root of the official GitHub Pages repository. Keep `.nojekyll` in the repository.
+Upload the package contents to the root of the official SCL GitHub Pages repository:
+https://github.com/MRODGODWIN/SCL-site-portal
 
-No Node.js file is required for this single-file V70 deployment.
+Do not rename the repository.

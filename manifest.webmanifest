@@ -1,0 +1,10 @@
+{
+  "name":"Shining Child Leaders School",
+  "short_name":"SCL School",
+  "start_url":"./",
+  "display":"standalone",
+  "background_color":"#fffdf8",
+  "theme_color":"#650007",
+  "description":"Official Shining Child Leaders School portal.",
+  "icons":[]
+}
