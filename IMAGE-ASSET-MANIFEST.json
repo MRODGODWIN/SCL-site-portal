@@ -1,0 +1,42 @@
+{
+  "version": "V89",
+  "unique_embedded_images": 7,
+  "assets": [
+    {
+      "file": "image-01-447aa1bfd6df68bd.webp",
+      "bytes": 18332,
+      "mime": "image/webp"
+    },
+    {
+      "file": "image-02-2d79b55b09aeb131.webp",
+      "bytes": 19748,
+      "mime": "image/webp"
+    },
+    {
+      "file": "image-03-a4a492376741e203.jpg",
+      "bytes": 438927,
+      "mime": "image/jpeg"
+    },
+    {
+      "file": "image-04-5cab7b1c916c936c.jpg",
+      "bytes": 75767,
+      "mime": "image/jpeg"
+    },
+    {
+      "file": "image-05-c30199afb65c4924.jpg",
+      "bytes": 313036,
+      "mime": "image/jpeg"
+    },
+    {
+      "file": "image-06-49de756488eba9b5.jpg",
+      "bytes": 31779,
+      "mime": "image/jpeg"
+    },
+    {
+      "file": "image-07-2f9845903c443d72.jpg",
+      "bytes": 372560,
+      "mime": "image/jpeg"
+    }
+  ],
+  "preservation": "Original decoded image bytes preserved; no recompression or downscaling."
+}

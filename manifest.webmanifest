@@ -1,10 +1,15 @@
 {
-  "name":"Shining Child Leaders School",
-  "short_name":"SCL School",
-  "start_url":"./",
-  "display":"standalone",
-  "background_color":"#fffdf8",
-  "theme_color":"#650007",
-  "description":"Official Shining Child Leaders School portal.",
-  "icons":[]
+  "name": "Shining Child Leaders School",
+  "short_name": "SCL",
+  "description": "Shining Child Leaders School — student, parent, staff and admin platform.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#650007",
+  "theme_color": "#650007",
+  "orientation": "portrait-primary",
+  "icons": [
+    { "src": "./assets/images/image-03-a4a492376741e203.jpg", "sizes": "512x512", "type": "image/jpeg", "purpose": "any" },
+    { "src": "./assets/images/image-04-5cab7b1c916c936c.jpg", "sizes": "256x256", "type": "image/jpeg", "purpose": "any" }
+  ]
 }
