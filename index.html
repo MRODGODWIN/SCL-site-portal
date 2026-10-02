@@ -125,6 +125,7 @@ if(jobs.length)Promise.all(jobs).then(function(){if(!sessionStorage.getItem("scl
 <meta content="mdmasterdan@gmail.com" name="creator-automation-email"/>
 <title>Shining Child Leaders School — Official Website</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>window.supabase||document.write('<script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"><\/script>')</script>
 <script>
 window.SCL_SUPABASE_URL="https://eypdoeqiojopkbzckjor.supabase.co";
 window.SCL_SUPABASE_PUBLISHABLE_KEY="sb_publishable_MpnYV6ZrgUJ8r9FD8yiD2A_qdb1tnGp";
@@ -132,6 +133,8 @@ window.sclSupabase=(window.supabase&&window.supabase.createClient||function(){re
 window.SCL_PUBLIC_API=window.SCL_SUPABASE_URL+"/functions/v1/scl-public-api";
 window.SCL_EDU_AI_API=window.SCL_SUPABASE_URL+"/functions/v1/scl-educational-intelligence";
 window.SCL_COMMUNITY_API=window.SCL_SUPABASE_URL+"/functions/v1/scl-community";
+/* OAuth return address: only a real http(s) page can receive the Google redirect (file:// gives origin "null") */
+window.sclOAuthRedirect=function(){return /^https?:$/.test(location.protocol)?location.origin+location.pathname:(window.SCL_SITE_URL||undefined)};
 </script>
 <style>
 *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#fffaf2;color:#260c0d}button,input,select,textarea{font:inherit}
@@ -7312,7 +7315,7 @@ document.documentElement.classList.add('scl-v72-page-polish');
     try{
       window.__sclGateEntryRequested=true;
       localStorage.setItem('sclAccountSyncPending','google');
-      const redirectTo=window.location.origin+window.location.pathname;
+      const redirectTo=window.sclOAuthRedirect();if(!redirectTo&&!/^https?:$/.test(location.protocol))throw new Error('Google sign-in only works from the live school website address, not from a saved file.');
       const {error}=await sb.auth.signInWithOAuth({provider:'google',options:{redirectTo,queryParams:{prompt:'select_account'}}});
       if(error)throw error;
     }catch(e){window.__sclGateEntryRequested=false;if(box){box.classList.remove('hidden');box.textContent=e.message||'Google authentication could not be started.';box.classList.add('statusbox')}}
@@ -9252,7 +9255,7 @@ AG.onLogin(function(){
   foot("Opening Google sign-in…");
   window.__sclGateEntryRequested=true;
   try{localStorage.setItem("sclAccountSyncPending","google")}catch(e){}
-  c.auth.signInWithOAuth({provider:"google",options:{redirectTo:location.origin+location.pathname,queryParams:{prompt:"select_account"}}})
+  c.auth.signInWithOAuth({provider:"google",options:{redirectTo:window.sclOAuthRedirect(),queryParams:{prompt:"select_account"}}})
     .then(function(r){if(r&&r.error)throw r.error})
     .catch(function(e){window.__sclGateEntryRequested=false;foot((e&&e.message)||"Google sign-in could not start. Try again.")});
 });
@@ -10582,4 +10585,79 @@ html body .scl-v33-tool[data-scl-ic]{text-align:center}
 .scl-at2 button.p:not(.on){border-color:#1faa59;color:#17803f}
 .scl-at2 button.a:not(.on){border-color:#d62839;color:#b01e2d}
 </style>
+<style id="scl-fix-v3">
+/* ===== v3: swipeable sections + compact mobile lists (wrappers only; inner section styling untouched) ===== */
+.scl-swipe-dots{display:none}
+@media (max-width:980px){
+ .scl-swipe{display:flex!important;grid-template-columns:none!important;gap:12px!important;overflow-x:auto;overflow-y:hidden;
+  scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;scroll-behavior:smooth;
+  padding:2px 2px 10px;margin:0;list-style:none;scrollbar-width:none;touch-action:pan-x pan-y}
+ .scl-swipe::-webkit-scrollbar{display:none}
+ .scl-swipe>*{flex:0 0 86%!important;min-width:0;scroll-snap-align:center;scroll-snap-stop:always;align-self:flex-start}
+ .scl-swipe-dots{display:flex;justify-content:center;gap:7px;margin:4px 0 8px}
+ .scl-swipe-dots button{width:9px;height:9px;padding:0;border:0;border-radius:999px;background:rgba(122,0,16,.28);cursor:pointer;transition:width .2s,background .2s}
+ .scl-swipe-dots button.on{width:24px;background:#7a0010}
+ .scl-swipe-hint{display:block;text-align:center;font-size:12px;color:#7a5a4a;margin:2px 0 0}
+ /* long calendar: collapsed with Show more */
+ .scl-clamp{max-height:430px;overflow:hidden;position:relative}
+ .scl-clamp::after{content:"";position:absolute;left:0;right:0;bottom:0;height:90px;pointer-events:none;background:linear-gradient(to bottom,rgba(255,255,255,0),#fff 85%)}
+ .scl-clamp.open{max-height:none}.scl-clamp.open::after{display:none}
+ .scl-more-btn{display:block;margin:8px auto 4px;padding:10px 22px;border:2px solid #7a0010;border-radius:999px;background:#fff;color:#7a0010;font-weight:800;font-size:13px;cursor:pointer}
+}
+@media (min-width:981px){.scl-swipe-hint,.scl-more-btn{display:none}}
+</style>
+<script id="scl-fix-v3-js">
+(function(){'use strict';
+var BASE=window.SCL_SUPABASE_URL||'',AKEY='sclAuthSession';
+/* ---------- 1. ACCOUNT CONNECTION FIXES ---------- */
+function readSess(){try{return JSON.parse(sessionStorage.getItem(AKEY)||'null')}catch(e){return null}}
+function syncSess(s){if(!s)return;var a=readSess();if(!a)return;a.accessToken=s.access_token;a.refreshToken=s.refresh_token;if(s.user)a.user=s.user;try{sessionStorage.setItem(AKEY,JSON.stringify(a))}catch(e){}}
+function expired(jwt){try{var p=JSON.parse(atob(jwt.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')));return p.exp*1000<Date.now()+30000}catch(e){return false}}
+/* (a) the Supabase client was null whenever the CDN script was blocked or slow: create it late / load a fallback host */
+function makeClient(){if(window.sclSupabase)return true;if(window.supabase&&window.supabase.createClient){window.sclSupabase=window.supabase.createClient(BASE,window.SCL_SUPABASE_PUBLISHABLE_KEY,{auth:{experimental:{passkey:true}}});return !!window.sclSupabase}return false}
+function hookAuth(){if(window.__sclTokHook||!window.sclSupabase||!window.sclSupabase.auth)return;window.__sclTokHook=1;
+ /* (b) TOKEN_REFRESHED used to be ignored, so sessionStorage kept an expired access token and every school API call returned 401 after ~1 hour */
+ window.sclSupabase.auth.onAuthStateChange(function(ev,s){if(s&&(ev==='TOKEN_REFRESHED'||ev==='SIGNED_IN'||ev==='USER_UPDATED'))syncSess(s)})}
+function boot(){if(makeClient()){hookAuth();return}
+ var n=0,t=setInterval(function(){if(makeClient()||++n>20){clearInterval(t);hookAuth();
+  /* page scripts that registered their sign-in listeners at load time saw a null client: reload once so they all bind to the live one */
+  if(window.sclSupabase){try{if(!sessionStorage.getItem('sclLateClientReload')){sessionStorage.setItem('sclLateClientReload','1');location.reload()}}catch(e){}}}},500);
+ if(!window.supabase){var s=document.createElement('script');s.src='https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js';s.async=true;document.head.appendChild(s)}}
+boot();
+/* (c) every call to the school's edge functions gets a fresh token, and one automatic retry on 401 */
+var origFetch=window.fetch.bind(window);
+async function freshToken(force){try{if(!makeClient())return null;hookAuth();var r=force?await window.sclSupabase.auth.refreshSession():await window.sclSupabase.auth.getSession();var s=r&&r.data&&r.data.session;if(s){syncSess(s);return s.access_token}}catch(e){}return null}
+window.fetch=async function(input,init){
+ var u=typeof input==='string'?input:(input&&input.url)||'',isFn=BASE&&u.indexOf(BASE+'/functions/v1/')===0;
+ if(!isFn)return origFetch(input,init);
+ function withTok(tok){var h=new Headers((init&&init.headers)||(typeof input!=='string'&&input.headers)||{});if(!h.get('apikey'))h.set('apikey',window.SCL_SUPABASE_PUBLISHABLE_KEY);if(tok)h.set('Authorization','Bearer '+tok);return Object.assign({},init||{},{headers:h})}
+ var a=readSess(),cur=a&&a.accessToken,i2=init;
+ if(cur&&expired(cur)){var t=await freshToken(false);if(t)i2=withTok(t)}
+ var res=await origFetch(input,i2);
+ if(res.status===401&&cur){var t2=await freshToken(true);if(t2){try{return await origFetch(typeof input==='string'?input:input.clone(),withTok(t2))}catch(e){}}}
+ return res};
+/* (d) clear message instead of "Cannot read properties of null" when the sign-in library is unreachable */
+function wrapLogin(){if(window.__sclLoginWrapped||typeof window.sclLogin!=='function')return;window.__sclLoginWrapped=1;var prev=window.sclLogin;
+ window.sclLogin=function(e){if(!makeClient()){if(e&&e.preventDefault)e.preventDefault();var b=document.getElementById('sclLoginStatus');if(b){b.classList.remove('hidden');b.textContent='Cannot reach the SCL sign-in service. Check your internet connection and try again.'}boot();return false}hookAuth();return prev.apply(this,arguments)}}
+window.addEventListener('load',function(){wrapLogin();setTimeout(wrapLogin,1500)});
+
+/* ---------- 2 & 3. SWIPE CAROUSELS + COMPACT LONG LISTS ---------- */
+function mkSwipe(el,labels,hint){if(!el||el.dataset.sclSw)return;el.dataset.sclSw=1;el.classList.add('scl-swipe');
+ var kids=[].slice.call(el.children),dots=document.createElement('div');dots.className='scl-swipe-dots';
+ kids.forEach(function(k,i){var b=document.createElement('button');b.type='button';b.setAttribute('aria-label','Show '+(labels&&labels[i]||'item '+(i+1)));b.onclick=function(){el.scrollTo({left:k.offsetLeft-(el.clientWidth-k.offsetWidth)/2,behavior:'smooth'})};dots.appendChild(b)});
+ el.insertAdjacentElement('afterend',dots);
+ if(hint){var h=document.createElement('p');h.className='scl-swipe-hint';h.textContent=hint;dots.insertAdjacentElement('afterend',h)}
+ function upd(){var c=el.scrollLeft+el.clientWidth/2,best=0,bd=1e9;kids.forEach(function(k,i){var d=Math.abs(k.offsetLeft+k.offsetWidth/2-c);if(d<bd){bd=d;best=i}});[].forEach.call(dots.children,function(b,i){b.classList.toggle('on',i===best)})}
+ el.addEventListener('scroll',function(){requestAnimationFrame(upd)},{passive:true});upd()}
+function mkClamp(el,txt){if(!el||el.dataset.sclCl)return;el.dataset.sclCl=1;el.classList.add('scl-clamp');
+ var b=document.createElement('button');b.type='button';b.className='scl-more-btn';b.textContent=txt;
+ b.onclick=function(){var o=el.classList.toggle('open');b.textContent=o?'Show less':txt};el.insertAdjacentElement('afterend',b)}
+function init(){
+ mkSwipe(document.querySelector('.hv2-groups'),['Parents','Learning','Staff and community'],'Swipe left or right: Parents · Learning · Staff and community');
+ mkSwipe(document.querySelector('.hv2-steps'),['step 1','step 2','step 3','step 4']);
+ mkClamp(document.getElementById('approvedAcademicCalendar'),'Show full calendar')}
+var tries=0,iv=setInterval(function(){init();if(document.querySelector('.hv2-groups.scl-swipe')&&document.getElementById('approvedAcademicCalendar')&&document.querySelector('.hv2-steps.scl-swipe')||++tries>40)clearInterval(iv)},400);
+})();
+</script>
+
 </body></html>
