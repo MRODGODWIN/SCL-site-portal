@@ -10019,8 +10019,8 @@ window.sclBioLogin=async function(){const rec=(()=>{try{return JSON.parse(localS
  try{await navigator.credentials.get({publicKey:{challenge:rnd(32),allowCredentials:[{type:'public-key',id:unb64(rec.id),transports:['internal']}],userVerification:'required',timeout:60000}})}catch(e){fb('Biometric check failed or was cancelled.','err');return}
  try{const r=await sb().auth.refreshSession({refresh_token:rec.refresh});if(r.error||!r.data||!r.data.session)throw new Error('expired');window.__sclGateEntryRequested=true;window.AccessGate&&AccessGate.hide();document.body.classList.remove('scl-public-locked');fb('Welcome back! Signed in with biometrics ✔','ok');setTimeout(()=>{try{window.sclOpenModernProfile&&sclOpenModernProfile()}catch(_){}},400)}catch(e){fb('Your saved biometric session expired — sign in with your password once to renew it.','err')}};
 (function keepBioFresh(){const t=setInterval(()=>{const c=sb();if(!c||!c.auth||!c.auth.onAuthStateChange)return;clearInterval(t);c.auth.onAuthStateChange((ev,ses)=>{try{const r=JSON.parse(localStorage.getItem('sclBio')||'null');if(r&&ses&&ses.user&&ses.user.id===r.uid){r.refresh=ses.refresh_token;localStorage.setItem('sclBio',JSON.stringify(r))}}catch(_){}})},800)})();
-function bioButtons(){const f=$('v-signin');if(f&&!$('sclBioBtn')){const b=document.createElement('button');b.type='button';b.id='sclBioBtn';b.className='ag-btn ag-g';b.style.marginTop='8px';b.innerHTML='🧬 Biometrics Login — fingerprint / face';b.onclick=window.sclBioLogin;const sub=Q('button[type=submit]',f);sub&&sub.insertAdjacentElement('afterend',b)}
- const h=$('v-home');if(h&&!$('sclBioBtn2')){const b=document.createElement('button');b.type='button';b.id='sclBioBtn2';b.className='ag-btn ag-s';b.innerHTML='🧬 Quick Biometrics Login';b.onclick=window.sclBioLogin;const s=Q('[data-access-action=signin]',h);s&&s.insertAdjacentElement('afterend',b)}}
+function bioButtons(){const f=$('v-signin');if(f&&!$('sclBioBtn')){const b=document.createElement('button');b.type='button';b.id='sclBioBtn';b.className='ag-btn ag-g';b.style.marginTop='8px';b.innerHTML='🧬 Sign in with fingerprint / face';b.onclick=window.sclBioLogin;const sub=Q('button[type=submit]',f);sub&&sub.insertAdjacentElement('afterend',b)}
+ const h=$('v-home');if(h&&!$('sclBioBtn2')){const b=document.createElement('button');b.type='button';b.id='sclBioBtn2';b.className='ag-btn ag-s';b.innerHTML='🧬 Biometrics Login';b.onclick=window.sclBioLogin;const s=Q('[data-access-action=signin]',h);s&&s.insertAdjacentElement('afterend',b)}}
 /* ---------- STUDENT ATTENDANCE ---------- */
 const CLASSES=['Daycare','Nursery 1','Nursery 2','Reception','Primary 1','Primary 2','Primary 3','Primary 4','Primary 5','JSS 1','JSS 2','JSS 3','SSS 1','SSS 2','SSS 3'];
 const isSec=c=>/^(JSS|SSS)/i.test(c||'');const today=()=>new Date().toISOString().slice(0,10);
@@ -10067,7 +10067,7 @@ function wireAtt(b){QA('[data-tab]',b).forEach(x=>x.onclick=()=>{ST.tab=x.datase
 async function saveAtt(){const list=roster(ST.cls);if(!list.length){fb('Add students to this class first.','err');return}const un=list.filter(s=>!marks[s.id]);if(un.length){fb(un.length+' student(s) not marked yet — mark everyone (use "Mark all present").','err');return}
  const sec=isSec(ST.cls);if(sec&&!ST.subject.trim()){fb('Enter the subject for this period.','err');return}
  const rec={date:ST.date,cls:ST.cls,period:sec?ST.period:'0',subject:ST.subject,teacher:ST.teacher,marks:Object.fromEntries(list.map(s=>[s.id,marks[s.id]])),savedAt:Date.now()};const all=LS('sclStuAtt',{});all[recKey()]=rec;SV('sclStuAtt',all);
- let synced=false;try{const rows=list.map(s=>{const row={attendance_date:rec.date,class_name:rec.cls,period:Number(rec.period),subject:rec.subject||null,teacher_name:rec.teacher||null,student_name:s.name,status:{P:'present',A:'absent',L:'late',E:'excused'}[marks[s.id]]};if(/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(s.id||'')))row.student_id=s.id;return row});const q=await sb().from('student_attendance').insert(rows);if(!q.error)synced=true}catch(_){}
+ let synced=false;try{const rows=list.map(s=>({attendance_date:rec.date,class_name:rec.cls,period:Number(rec.period),subject:rec.subject||null,teacher_name:rec.teacher||null,student_id:s.id,student_name:s.name,status:{P:'present',A:'absent',L:'late',E:'excused'}[marks[s.id]]}));const q=await sb().from('student_attendance').insert(rows);if(!q.error)synced=true}catch(_){}
  const full={P:'present',A:'absent',L:'late',E:'excused'},when=rec.date+(sec?' · Period '+rec.period+(rec.subject?' ('+rec.subject+')':''):' · daily register'),q=LS('sclStuNotify',[]);
  list.forEach(s=>q.push({id:uid(),at:Date.now(),student:s.name,cls:rec.cls,status:marks[s.id],when,pe:s.pe,pp:s.pp,msg:'Dear Parent, '+s.name+' ('+rec.cls+') was marked '+full[marks[s.id]]+' — '+when+'. Shining Child Leaders School.'}));SV('sclStuNotify',q.slice(-1500));
  const c={P:0,A:0,L:0,E:0};Object.values(rec.marks).forEach(v=>c[v]++);fb('Attendance saved: '+c.P+' present, '+c.A+' absent, '+c.L+' late.'+(synced?' Synced to the school database.':' Saved on this device (database table not connected yet).'),'ok',4200);
@@ -10279,74 +10279,92 @@ const origBranch=window.sclOpenBranchAdmin;
 window.sclOpenBranchAdmin=async function(){try{if(origBranch)await origBranch.apply(this,arguments)}catch(_){}
  const box=$('sclBranchAdminBody');if(!box){fb('Branch screen is not available.','err');return}box.innerHTML='<div class="scl300-note" data-scl-keep style="color:#14061f">Loading branches…</div>';
  try{await brLoad();brRender()}catch(e){box.innerHTML='<div class="scl300-note" data-scl-keep style="color:#14061f">❌ Could not load branches: '+esc(e.message)+'<br>Sign in as an administrator and try again.</div>'}};
-window.sclCaptureBranchGPS=async function(id){
- if(!id){window.sclOpenBranchAdmin();return}
- try{
-  await brLoad();const i=BR.findIndex(b=>bid(b)===String(id));if(i<0)throw new Error('That branch was not found. Reload Branch & GPS and try again.');
-  if(!navigator.geolocation)throw new Error('This browser does not provide GPS. Use Type Coordinates instead.');
-  brSay('Getting a precise GPS fix… keep the phone outdoors.','info');
-  const pos=await new Promise((res,rej)=>navigator.geolocation.getCurrentPosition(res,rej,{enableHighAccuracy:true,timeout:25000,maximumAge:0}));
-  const c=pos.coords,acc=Math.round(c.accuracy||0);if(!Number.isFinite(c.latitude)||!Number.isFinite(c.longitude))throw new Error('The phone did not return valid GPS coordinates.');
-  await brSave(i,c.latitude,c.longitude,0);brSay('✅ '+BR[i].name+' GPS saved (accuracy ±'+acc+' m).','ok');window.sclOpenBranchAdmin();
- }catch(e){brSay('❌ '+(e&&e.message||'Could not capture branch GPS.'),'err')}
-};
+window.sclCaptureBranchGPS=function(){window.sclOpenBranchAdmin()};
 })();
 
 </script>
-<style id="scl-v303-layout-polish">
-/* V303: merge the Multipu/SCL mark and Educational Intelligence into one safe, centered coin. */
-html body #sclMultiLogo,html body #auraFab{display:none!important;pointer-events:none!important}
-#sclCenterAICoin{position:fixed;left:50%;top:50%;width:58px;height:58px;padding:0;border:0;border-radius:50%;background:transparent;z-index:7000;transform:translate(-50%,-50%);perspective:700px;cursor:pointer;filter:drop-shadow(0 5px 12px rgba(0,0,0,.32));opacity:.94;transition:opacity .2s ease,filter .2s ease;isolation:isolate}
-#sclCenterAICoin:hover,#sclCenterAICoin:focus-visible{opacity:1;filter:drop-shadow(0 7px 18px rgba(0,0,0,.45));outline:2px solid #f2ae00;outline-offset:3px}
-#sclCenterAICoin .scl-coin-inner{position:absolute;inset:0;border-radius:50%;transform-style:preserve-3d;transition:transform .72s cubic-bezier(.2,.75,.25,1)}
-#sclCenterAICoin.is-ai .scl-coin-inner{transform:rotateY(180deg)}
-#sclCenterAICoin .scl-coin-face{position:absolute;inset:0;display:grid;place-items:center;overflow:hidden;border:3px solid #f2ae00;border-radius:50%;backface-visibility:hidden;background:linear-gradient(145deg,#fff,#eee);box-shadow:inset 0 0 0 2px rgba(255,255,255,.75)}
-#sclCenterAICoin .scl-coin-face img{width:100%;height:100%;object-fit:cover;border-radius:50%;display:block}
-#sclCenterAICoin .scl-coin-back{transform:rotateY(180deg);background:#101b31}
-#sclCenterAICoin .scl-coin-back img{object-position:50% 22%}
-#sclCenterAICoin .scl-coin-hint{position:absolute;left:50%;top:calc(100% + 6px);transform:translateX(-50%);padding:3px 7px;border-radius:999px;background:#650007;color:#fff;font-size:9px;font-weight:900;white-space:nowrap;box-shadow:0 2px 6px #0003;pointer-events:none}
-body.scl-v303-modal-open #sclCenterAICoin,body.scl-v303-ai-open #sclCenterAICoin{opacity:0!important;visibility:hidden!important;pointer-events:none!important}
-/* Keep close/cancel/back controls above any floating element, even during transitions. */
-.modal.open,.modal[aria-hidden="false"],.modal.show{z-index:12000!important}
-.modal.open .mh,.modal.open .scl-v91-discipline-card>div:first-child{position:relative}
-/* Icons in dashboard/action cards sit centered above their own label, without changing actions or text. */
-.scl-v91-admin-actions button,.scl-shortcut-item,.scl-role-action{display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;text-align:center!important;gap:5px!important}
-.scl-v91-admin-actions button .scl-v303-icon,.scl-shortcut-item .scl-v303-icon,.scl-role-action .scl-v303-icon{display:block!important;align-self:center!important;text-align:center!important;font-size:24px!important;line-height:1.1!important;margin:0 auto 2px!important}
-.scl-v91-admin-actions button small,.scl-shortcut-item small,.scl-role-action small{display:block!important;width:100%!important;text-align:center!important}
-/* Center the existing WhatsApp chat launcher without replacing its fade/disappear animation. */
-html body .wa{left:50%!important;right:auto!important;translate:-50% 0!important}
-@media(max-width:600px){html body .wa{left:50%!important;right:auto!important;translate:-50% 0!important}}
-/* Keep the bottom-bar Support/WhatsApp entry vertically and horizontally aligned. */
-.bottom .scl-bottom-support{justify-self:center!important;align-self:center!important}
-@media(max-width:480px){#sclCenterAICoin{width:52px;height:52px}#sclCenterAICoin .scl-coin-hint{font-size:8px}}
-@media(prefers-reduced-motion:reduce){#sclCenterAICoin .scl-coin-inner{transition:none!important}}
+<style id="scl-centre-coin-align-v1">
+/* ===== SCL targeted patch v1 =====
+   1) ONE combined MultiPu <-> Educational Intelligence coin (reuses existing #sclMultiLogo)
+   2) WhatsApp button centred horizontally (no transform, so existing animations stay intact)
+   3) Icon/label alignment for the top navigation + button icons (targeted selectors only) */
+
+/* 1. Combined coin: true horizontal centre, vertical middle */
+html body #sclMultiLogo{position:fixed!important;top:50%!important;left:50%!important;right:auto!important;bottom:auto!important;
+  width:64px!important;height:64px!important;margin:-32px 0 0 -32px!important;padding:0!important;border:0!important;
+  background:transparent!important;box-shadow:none!important;animation:none!important;transform:none!important;
+  perspective:700px;-webkit-perspective:700px;z-index:10080;cursor:pointer;
+  transition:opacity .2s ease,visibility .2s ease}
+html body #sclMultiLogo .sclcc-coin{position:relative;display:block;width:100%;height:100%;
+  transform-style:preserve-3d;-webkit-transform-style:preserve-3d;
+  animation:sclCoinFlip 4s ease-in-out infinite;will-change:transform}
+html body #sclMultiLogo .sclcc-face{position:absolute;top:0;right:0;bottom:0;left:0;border-radius:50%;box-sizing:border-box;overflow:hidden;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  backface-visibility:hidden;-webkit-backface-visibility:hidden}
+html body #sclMultiLogo .sclcc-front{padding:3px;background:conic-gradient(from 0deg,#ffd33d,#a259ff,#ff4fa3,#3d7bff,#ffd33d);box-shadow:0 6px 18px rgba(162,89,255,.5)}
+html body #sclMultiLogo .sclcc-front img{width:100%;height:100%;border-radius:50%;display:block;background:#f4f4f4;animation:none!important;transform:none!important}
+html body #sclMultiLogo .sclcc-back{transform:rotateY(180deg);-webkit-transform:rotateY(180deg);background:linear-gradient(145deg,#650007,#8c0b14);border:3px solid #f2ae00;color:#fff;box-shadow:0 6px 18px rgba(0,0,0,.4)}
+html body #sclMultiLogo .sclcc-back b{font:900 19px/1 Arial,sans-serif;letter-spacing:.5px}
+html body #sclMultiLogo .sclcc-back small{font:800 8px/1 Arial,sans-serif;letter-spacing:.4px;margin-top:2px}
+/* hidden while any popup/modal/gate is open, so Cancel/Close/Back/Save are never covered */
+html body.sclcc-hide #sclMultiLogo{opacity:0!important;visibility:hidden!important;pointer-events:none!important}
+@media(max-height:480px){html body #sclMultiLogo{width:52px!important;height:52px!important;margin:-26px 0 0 -26px!important}html body #sclMultiLogo .sclcc-back b{font-size:15px}}
+@media(prefers-reduced-motion:reduce){html body #sclMultiLogo .sclcc-coin{animation:none}}
+
+/* 2. WhatsApp button: horizontal centre (margins, not transform) */
+html body .wa{left:0!important;right:0!important;margin-left:auto!important;margin-right:auto!important;width:max-content!important;max-width:calc(100vw - 28px)!important}
+
+/* 3. Icon alignment (targeted) */
+html body .hv2-nav>a[data-scl-ic],html body .hv2-nav>button[data-scl-ic]{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:2px}
+html body .hv2-nav>a[data-scl-ic]::before,html body .hv2-nav>button[data-scl-ic]::before{display:block!important;margin:0!important;line-height:1.1;text-align:center}
+html body #accessGate .ag-btn[data-scl-ic]::before{flex:0 0 auto;margin-right:0!important;line-height:1}
+html body :is(.btn,.scl-btn,.hv2-btn)[data-scl-ic]{text-align:center}
+html body :is(.btn,.scl-btn,.hv2-btn)[data-scl-ic]::before{vertical-align:-.1em;line-height:1}
 </style>
-<script id="scl-v303-layout-polish-script">
+<script id="scl-centre-coin-align-v1-js">
 (function(){'use strict';
- function firstImg(selectors){for(const sel of selectors){const el=document.querySelector(sel);if(el&&el.src)return el.src}return ''}
- function buildCoin(){
-  if(document.getElementById('sclCenterAICoin'))return;
-  const logo=firstImg(['#sclMultiLogo img','.scl-logo-coin .scl-logo-front img','.scl-logo-coin-dock img']);
-  const ai=window.SCL_AURA_IMG||firstImg(['#auraFab img','.au-h img']);
-  if(!logo&&!ai)return;
-  const b=document.createElement('button');b.type='button';b.id='sclCenterAICoin';b.setAttribute('aria-label','Open Educational Intelligence AI');b.title='Tap to ask Educational Intelligence AI';
-  b.innerHTML='<span class="scl-coin-inner"><span class="scl-coin-face scl-coin-front"><img alt="Multipu logo" src="'+(logo||ai)+'"></span><span class="scl-coin-face scl-coin-back"><img alt="Educational Intelligence AI" src="'+(ai||logo)+'"></span></span><span class="scl-coin-hint">ASK AI</span>';
-  b.addEventListener('click',function(){try{window.auraOpen?.();document.body.classList.add('scl-v303-ai-open');const panel=document.getElementById('auraPanel');if(panel){const mo=new MutationObserver(()=>{if(!panel.classList.contains('open'))document.body.classList.remove('scl-v303-ai-open')});mo.observe(panel,{attributes:true,attributeFilter:['class']});setTimeout(()=>mo.disconnect(),3600000)}}catch(e){console.error('AI panel could not open',e)}});
-  document.body.appendChild(b);
-  let aiFace=false;setInterval(()=>{aiFace=!aiFace;b.classList.toggle('is-ai',aiFace)},2000);
- }
- function modalIsOpen(){return Array.from(document.querySelectorAll('.modal.open,.modal[aria-hidden="false"],.modal.show')).some(m=>{if(m.id==='auraPanel')return false;const cs=getComputedStyle(m);return cs.display!=='none'&&cs.visibility!=='hidden'&&Number(cs.opacity||1)>.02})}
- function keepClear(){const open=modalIsOpen();document.body.classList.toggle('scl-v303-modal-open',open);const panel=document.getElementById('auraPanel');document.body.classList.toggle('scl-v303-ai-open',!!panel&&panel.classList.contains('open'));}
- function centerIcons(){
-  const selectors='.scl-v91-admin-actions button,.scl-shortcut-item,.scl-role-action';
-  document.querySelectorAll(selectors).forEach(el=>{if(el.dataset.sclV303IconDone)return;const small=el.querySelector('small');const textNode=Array.from(el.childNodes).find(n=>n.nodeType===Node.TEXT_NODE&&n.textContent.trim());if(!textNode)return;const txt=textNode.textContent;const m=txt.match(/^\s*(\p{Extended_Pictographic}(?:\uFE0F|\uFE0E|\u200D\p{Extended_Pictographic}|\p{Emoji_Modifier})*)\s*/u);if(!m)return;const span=document.createElement('span');span.className='scl-v303-icon';span.textContent=m[1];textNode.textContent=txt.replace(m[0],'');el.insertBefore(span,el.firstChild);el.dataset.sclV303IconDone='1';if(small)small.style.textAlign='center';});
- }
- function renameBio(){document.querySelectorAll('#sclBioBtn,#sclBioBtn2').forEach(b=>{const t=b.id==='sclBioBtn'?'🧬 Biometrics Login — fingerprint / face':'🧬 Quick Biometrics Login';if(b.textContent!==t)b.textContent=t;if(b.getAttribute('aria-label')!=='Biometrics Login')b.setAttribute('aria-label','Biometrics Login')});}
- function run(){buildCoin();centerIcons();renameBio();keepClear()}
- if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',run,{once:true});else run();
- const mo=new MutationObserver(()=>{run()});mo.observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['class','aria-hidden']});
- document.addEventListener('click',()=>setTimeout(keepClear,40),true);
- window.addEventListener('resize',keepClear,{passive:true});
+  if(window.__sclCentreCoinV1)return;window.__sclCentreCoinV1=true;
+  var D=document;
+  /* popups that must never be covered by the coin */
+  var OPEN=['.modal.open','.scl-new-account-modal.open','.scl-ai-modal.open','.scl300-modal.open','.wa-modal.show',
+            '#sclShortcutPanel.open','#sclV211AdminPanel.open','#auraPanel.open','[id*="Modal"].open','#accessGate'].join(',');
+  function shown(el){
+    try{var c=getComputedStyle(el);if(c.display==='none'||c.visibility==='hidden')return false;
+        var r=el.getBoundingClientRect();return r.width>0&&r.height>0}catch(_){return false}
+  }
+  function anyOpen(){var n=D.querySelectorAll(OPEN);for(var i=0;i<n.length;i++){if(shown(n[i]))return true}return false}
+  function openEI(){
+    var m=D.getElementById('sclAiModal');
+    if(m){m.classList.add('open');var t=m.querySelector('textarea');if(t)setTimeout(function(){try{t.focus({preventScroll:true})}catch(_){}},80);return}
+    if(typeof window.toast==='function')window.toast('Educational Intelligence is still loading — please try again.')
+  }
+  function build(){
+    var m=D.getElementById('sclMultiLogo');if(!m)return false;
+    if(m.getAttribute('data-sclcc')==='1')return true;
+    var img=m.querySelector('img');
+    var coin=D.createElement('span');coin.className='sclcc-coin';
+    var front=D.createElement('span');front.className='sclcc-face sclcc-front';
+    if(img)front.appendChild(img);               /* move (not copy) the existing MultiPu image */
+    var back=D.createElement('span');back.className='sclcc-face sclcc-back';back.innerHTML='<b>EI</b><small>AI</small>';
+    coin.appendChild(front);coin.appendChild(back);
+    while(m.firstChild)m.removeChild(m.firstChild);
+    m.appendChild(coin);
+    m.setAttribute('data-sclcc','1');
+    m.setAttribute('aria-label','Educational Intelligence AI by MultiPu. Tap to ask a question.');
+    m.title='Educational Intelligence AI (MultiPu)';
+    m.onclick=function(e){if(e&&e.preventDefault)e.preventDefault();openEI()};
+    return true
+  }
+  var raf=0;
+  function tick(){raf=0;build();D.body.classList.toggle('sclcc-hide',anyOpen())}
+  function schedule(){if(!raf)raf=requestAnimationFrame(tick)}
+  function start(){
+    tick();
+    try{new MutationObserver(schedule).observe(D.body,{subtree:true,childList:true,attributes:true,attributeFilter:['class','style','aria-hidden']})}catch(_){}
+    window.addEventListener('resize',schedule,{passive:true});
+    setInterval(schedule,1500)
+  }
+  if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',start,{once:true});else start()
 })();
 </script>
 </body></html>
