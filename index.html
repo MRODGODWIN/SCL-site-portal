@@ -2189,7 +2189,7 @@ function rankHtml(d){const next=d.next_due_date?rankDate(d.next_due_date):'Not d
     document.getElementById('sclAttendanceBody').innerHTML=html;
   }
   async function branchPickerHtml(){const d=await getBranches();const b=d.branches||[];return b.map(x=>'<label class="scl-att-branch"><input type="radio" name="sclBranch" value="'+esc(x.id)+'" style="margin-right:7px"> <b>'+esc(x.name)+'</b><br><small>'+esc(x.address)+'</small><br><small>Approved radius: '+esc(x.radius_m)+' m • '+(x.latitude==null?'GPS not configured':'GPS configured')+'</small></label>').join('')||'<div class="scl-att-warning">No active school branches are configured.</div>'}
-  async function chooseBranchAndLocation(action){const box=document.getElementById('sclAttendanceBody');box.innerHTML='<div class="scl-att-warning">Loading approved school branches…</div>';const branches=await getBranches();const list=branches.branches||[];box.innerHTML='<div class="scl-att-card"><h4>'+(action==='in'?'Sign Attendance':'Sign Out')+'</h4><p>Select the branch you are physically at. SCL will request your phone location and will not accept the action outside the branch geofence.</p><div class="scl-att-branch-grid">'+list.map(x=>'<label class="scl-att-branch"><input type="radio" name="sclBranch" value="'+esc(x.id)+'" style="margin-right:7px"> <b>'+esc(x.name)+'</b><br><small>'+esc(x.address)+'</small><br><small>Approved radius: '+esc(x.radius_m)+' m • '+(x.latitude==null?'GPS NOT CONFIGURED':'GPS READY')+'</small></label>').join('')+'</div><div class="scl-att-actions"><button class="btn outline" onclick="sclOpenAttendance()" type="button">BACK</button><button class="btn red" onclick="sclContinueAttendance(\''+action+'\')" type="button">CONTINUE WITH PHONE LOCATION</button></div></div><div class="scl-att-passkey-note">Next step: the phone will prompt for its own biometric / passkey verification. SCL does not receive fingerprint or face data.</div>'}
+  async function chooseBranchAndLocation(action){const box=document.getElementById('sclAttendanceBody');box.innerHTML='<div class="scl-att-warning">Loading approved school branches…</div>';const branches=await getBranches();const list=branches.branches||[];box.innerHTML='<div class="scl-att-card"><h4>'+(action==='in'?'Sign Attendance':'Sign Out')+'</h4><p>Select the branch you are physically at. SCL will request your phone location and if your GPS cannot be verified, your attendance is still counted and marked PENDING until it is verified.</p><div class="scl-att-branch-grid">'+list.map(x=>'<label class="scl-att-branch"><input type="radio" name="sclBranch" value="'+esc(x.id)+'" style="margin-right:7px"> <b>'+esc(x.name)+'</b><br><small>'+esc(x.address)+'</small><br><small>Approved radius: '+esc(x.radius_m)+' m • '+(x.latitude==null?'GPS NOT CONFIGURED':'GPS READY')+'</small></label>').join('')+'</div><div class="scl-att-actions"><button class="btn outline" onclick="sclOpenAttendance()" type="button">BACK</button><button class="btn red" onclick="sclContinueAttendance(\''+action+'\')" type="button">CONTINUE WITH PHONE LOCATION</button></div></div><div class="scl-att-passkey-note">Next step: the phone will prompt for its own biometric / passkey verification. SCL does not receive fingerprint or face data.</div>'}
   window.sclSignIn=()=>chooseBranchAndLocation('in');
   window.sclSignOut=()=>chooseBranchAndLocation('out');
   window.sclContinueAttendance=async function(action){const branch=document.querySelector('input[name="sclBranch"]:checked')?.value;if(!branch){toast('Choose the branch first.');return}try{const p=await requestLocation();const coords=p.coords;const accuracy=Number(coords.accuracy||0);if(!Number.isFinite(coords.latitude)||!Number.isFinite(coords.longitude))throw new Error('The phone did not return a usable location.');document.getElementById('sclAttendanceBody').innerHTML='<div class="scl-att-warning">Location captured. Please complete the phone biometric / passkey prompt…</div>';await passkeyVerify();const out=await attFetch(action==='in'?'sign_in':'sign_out','POST',{branch_id:branch,latitude:coords.latitude,longitude:coords.longitude,accuracy_m:accuracy,verification:'phone_passkey'});toast(action==='in'?'Attendance signed in successfully.':'Attendance signed out successfully.');renderSelfAttendance(out, false)}catch(e){document.getElementById('sclAttendanceBody').innerHTML='<div class="scl-att-error">'+esc(e.message||'Attendance could not be completed.')+'</div><div class="scl-att-actions"><button class="btn outline" onclick="sclOpenAttendance()" type="button">TRY AGAIN</button><button class="btn red" onclick="openWhatsAppChoices()" type="button">CONTACT TECHNICAL ADMIN</button></div>'}};
@@ -8392,25 +8392,45 @@ setInterval(apply,700);
     const loginEmail=String(a.user?.email||a.profile?.email||'').trim().toLowerCase();
     if(loginEmail&&username.toLowerCase()!==loginEmail){toast?.('The email/username does not match the SCL account currently signed in.');return}
     if(btn)btn.disabled=true;
+    let gps={state:'pending',reason:'',lat:null,lng:null,acc:null,dist:null};
     try{
       if(status)status.innerHTML='<div class="scl-att-warning">Checking your live school location…</div>';
-      if(!navigator.geolocation)throw new Error('This device/browser does not provide GPS location.');
-      const pos=await new Promise((resolve,reject)=>navigator.geolocation.getCurrentPosition(resolve,reject,{enableHighAccuracy:true,maximumAge:0,timeout:20000}));
-      const c=pos.coords,accuracy=Number(c.accuracy||0);
-      if(!Number.isFinite(c.latitude)||!Number.isFinite(c.longitude))throw new Error('The device did not return a usable GPS location.');
-      const branches=await (async()=>{const r=await fetch(window.SCL_SUPABASE_URL+'/functions/v1/scl-attendance?action=branches',{headers:{apikey:window.SCL_SUPABASE_PUBLISHABLE_KEY}});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||'Unable to load the school attendance locations.');return d.branches||[]})();
-      const b=branches.find(x=>String(x.id)===String(branch));
-      if(!b)throw new Error('The selected school location is not available. Please contact the administrator.');
-      if(b.latitude==null||b.longitude==null)throw new Error('The selected school location has no GPS coordinates configured. An administrator must configure the branch before attendance can be recorded.');
-      const R=6371000,rad=x=>x*Math.PI/180,dl=rad(Number(b.latitude)-c.latitude),dn=rad(Number(b.longitude)-c.longitude),q=Math.sin(dl/2)**2+Math.cos(rad(c.latitude))*Math.cos(rad(Number(b.latitude)))*Math.sin(dn/2)**2,dist=2*R*Math.asin(Math.sqrt(q)),radius=Number(b.radius_m||150);
-      if(dist>radius)throw new Error('Location not confirmed. You are about '+Math.round(dist)+' m from '+String(b.name||'the selected school')+'. Please move to the school location and try again.');
-      if(status)status.innerHTML='<div class="scl-att-warning">Location confirmed ('+Math.round(dist)+' m). Recording attendance securely…</div>';
+      try{
+        if(!navigator.geolocation)throw new Error('This device/browser does not provide GPS location.');
+        const pos=await new Promise((resolve,reject)=>navigator.geolocation.getCurrentPosition(resolve,reject,{enableHighAccuracy:true,maximumAge:0,timeout:20000}));
+        const c=pos.coords;
+        if(!Number.isFinite(c.latitude)||!Number.isFinite(c.longitude))throw new Error('The device did not return a usable GPS location.');
+        gps.lat=c.latitude;gps.lng=c.longitude;gps.acc=Number(c.accuracy||0);
+        const branches=await (async()=>{const r=await fetch(window.SCL_SUPABASE_URL+'/functions/v1/scl-attendance?action=branches',{headers:{apikey:window.SCL_SUPABASE_PUBLISHABLE_KEY}});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||'Unable to load the school attendance locations.');return d.branches||[]})();
+        const b=branches.find(x=>String(x.id)===String(branch));
+        if(!b)throw new Error('The selected school location is not available.');
+        if(b.latitude==null||b.longitude==null)throw new Error('This branch has no GPS coordinates saved yet.');
+        const R=6371000,rad=x=>x*Math.PI/180,dl=rad(Number(b.latitude)-c.latitude),dn=rad(Number(b.longitude)-c.longitude),q=Math.sin(dl/2)**2+Math.cos(rad(c.latitude))*Math.cos(rad(Number(b.latitude)))*Math.sin(dn/2)**2,dist=2*R*Math.asin(Math.sqrt(q)),radius=Number(b.radius_m||150);
+        gps.dist=dist;
+        if(dist>radius)throw new Error('You are about '+Math.round(dist)+' m from '+String(b.name||'the selected school')+' (allowed: '+radius+' m).');
+        gps.state='verified';
+      }catch(ge){gps.reason=ge&&ge.code===1?'Location permission is blocked for this site.':ge&&ge.code===3?'GPS timed out.':String((ge&&ge.message)||'GPS could not be verified.')}
+      if(status)status.innerHTML='<div class="scl-att-warning">'+(gps.state==='verified'?'Location confirmed ('+Math.round(gps.dist)+' m). Recording attendance securely…':'GPS not verified. Recording your attendance as PENDING…')+'</div>';
       const h={'apikey':window.SCL_SUPABASE_PUBLISHABLE_KEY,'Authorization':'Bearer '+a.accessToken,'Content-Type':'application/json'};
-      const rr=await fetch(window.SCL_SUPABASE_URL+'/functions/v1/scl-attendance?action='+encodeURIComponent(action==='in'?'sign_in':'sign_out'),{method:'POST',headers:h,body:JSON.stringify({branch_id:branch,latitude:c.latitude,longitude:c.longitude,accuracy_m:accuracy,verification:'device_location_and_account_login',staff_username:username,attendance_period:period})});
-      const out=await rr.json().catch(()=>({}));if(!rr.ok)throw new Error(out.error||'The attendance service rejected the submission.');
-      toast?.(action==='in'?'Attendance signed in successfully.':'Attendance signed out successfully.');
+      const branchLabel=(document.querySelector('input[name="sclV42Branch"]:checked')?.closest('label')?.textContent||'').replace(/\s+/g,' ').trim().slice(0,60);
+      const payload={branch_id:branch,latitude:gps.lat,longitude:gps.lng,accuracy_m:gps.acc,verification:gps.state==='verified'?'device_location_and_account_login':'gps_pending',gps_status:gps.state,gps_pending_reason:gps.state==='verified'?undefined:gps.reason,client_time:new Date().toISOString(),staff_username:username,attendance_period:period};
+      const endpoint=window.SCL_SUPABASE_URL+'/functions/v1/scl-attendance?action='+encodeURIComponent(action==='in'?'sign_in':'sign_out');
+      let out={},where='server';
+      try{
+        const rr=await fetch(endpoint,{method:'POST',headers:h,body:JSON.stringify(payload)});
+        out=await rr.json().catch(()=>({}));
+        if(!rr.ok)throw new Error(out.error||'The attendance service rejected the submission.');
+      }catch(se){
+        if(gps.state==='verified'||!window.sclPendAtt)throw se;
+        where='device';out={};
+        window.sclPendAtt.add({action:action,endpoint:endpoint,payload:payload,branch:branchLabel,period:period,reason:gps.reason,serverNote:String(se&&se.message||'')});
+      }
+      const msg=gps.state==='verified'?(action==='in'?'Attendance signed in successfully.':'Attendance signed out successfully.'):('Attendance recorded - GPS PENDING ('+gps.reason+') '+(where==='device'?'Saved on this device; it will sync automatically.':'It will show as pending until verified.'));
+      if(window.sclPendAtt)window.sclPendAtt.notify('SCL Attendance',msg);else toast?.(msg);
+      if(gps.state!=='verified'&&window.sclPendAtt&&window.sclPendAtt.alertAdmin)window.sclPendAtt.alertAdmin({action:action,username:username,branch:branchLabel,period:period,reason:gps.reason,dist:gps.dist,acc:gps.acc,where:where});
       window.sclCalendarAttendanceSync?.();window.sclAttendanceStatusSync?.(out.record);
       if(typeof window.sclOpenAttendance==='function')await window.sclOpenAttendance('self');
+      if(gps.state!=='verified'){const s2=document.getElementById('sclV42LocationStatus');if(s2)s2.innerHTML='<div class="scl-att-warning">⏳ '+String(msg).replace(/[&<>]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]))+'</div>'}
     }catch(e){if(status)status.innerHTML='<div class="scl-att-error">'+String(e.message||'Attendance could not be completed.').replace(/[&<>]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]))+'</div>';}
     finally{if(btn)btn.disabled=false;}
   };
@@ -9566,7 +9586,7 @@ var ACT={
  reg:function(){run('pickRegistration')},fees:function(){run('pickFees')},results:function(){run('openResults')},mat:function(){run('openMaterials')},
  cur:function(){openScheme()},tt:function(){run('openM','sclSuiteModal');run('sclSuiteTab','timetable')},uni:function(){run('openUniformCatalogue')},
  notice:function(){run('openSclNotice')},kids:function(){run('openMyChildren')},staff:function(){run('openWorkers')},collab:function(){run('openCollaboration')},
- gallery:function(){run('openLogoGallery')},lead:function(){run('openSclLeadership')},att:function(){run('sclOpenAttendance')},prof:function(){run('sclOpenModernProfile')},
+ gallery:function(){run('openLogoGallery')},lead:function(){run('openSclLeadership')},att:function(){run('sclOpenAttendance')},satt:function(){run('openStudentAttendance')},prof:function(){run('sclOpenModernProfile')},
  wa:function(){run('openWhatsAppChoices')},mail:function(){run('openSchoolEmail')},aura:function(){auraOpen()},
  negot:function(){var b=D.getElementById('sclV33FeeButton');if(b)b.click()},email:function(){var b=D.getElementById('sclV33EmailButton');if(b)b.click()},anthem:function(){run('openLogoGallery');setTimeout(function(){run('showCommunityTab','anthem')},60)},cert:function(){run('openCertificate')}
 };
@@ -9588,7 +9608,7 @@ function buildHome(){
  '<section class="hv2-sec" id="academics"><div class="hv2-in"><h2>Everything in one place</h2><p class="hv2-lead">Pick what you need. Each option opens the matching school tool.</p><div class="hv2-groups">'+
  '<div class="hv2-grp"><h3>Parents</h3>'+T('reg','Register your child','New admission or returning student promotion')+T('fees','Fees and payments','Class fees, bank details and receipts')+T('results','Results and certificates','Get a result PIN and view results')+T('kids','My children','Progress, care notes and history')+T('negot','Fee negotiation','Discuss fees or request support')+T('email','School email and user ID','Create the school email identity and user ID')+T('uni','School uniform','Official uniform catalogue')+'</div>'+
  '<div class="hv2-grp g2"><h3>Learning</h3>'+T('cur','Curriculum and scheme of work','JSS and SSS weekly topics by subject and term')+T('tt','Timetable','Weekly periods, teachers and rooms')+T('mat','School materials','Books and items with purchase links')+T('notice','Notices','Announcements and school alerts')+T('gallery','Gallery, medals and anthem','School life, records and the anthem')+'</div>'+
- '<div class="hv2-grp g3"><h3>Staff and community</h3>'+T('staff','Staff registration and vacancies','Register as staff or apply for a position')+T('att','Staff attendance','Sign in, sign out and history')+T('prof','My profile','Your personal dashboard')+T('lead','Leadership badges','Prefect and student badges')+T('collab','Collaboration','Partners, activities and social links')+'</div>'+
+ '<div class="hv2-grp g3"><h3>Staff and community</h3>'+T('staff','Staff registration and vacancies','Register as staff or apply for a position')+T('att','Staff attendance','Sign in, sign out and history')+T('satt','Student attendance','Mark present or absent for your class')+T('prof','My profile','Your personal dashboard')+T('lead','Leadership badges','Prefect and student badges')+T('collab','Collaboration','Partners, activities and social links')+'</div>'+
  '</div></div></section>'+
  '<section class="hv2-sec" id="about"><div class="hv2-in hv2-about"><div><h2>About our school</h2><p class="hv2-lead">Shining Child Leaders School provides holistic education that builds character, sharpens minds and prepares future leaders with knowledge, skills and values for a better tomorrow.</p>'+
  '<h3 style="font-size:21px">Why families choose us</h3><ul class="hv2-why"><li>Qualified, experienced teachers</li><li>Conducive learning environment</li><li>ICT and computer education</li><li>Safe and secure campus</li><li>School bus service</li><li>Affordable, transparent fees</li></ul></div><div class="hv2-car" id="hv2Car"></div></div></section>'+
@@ -9669,19 +9689,23 @@ function auraBuild(){
  if($('#auraPanel'))return;
  var f=D.createElement('button');f.id='auraFab';f.type='button';f.setAttribute('aria-label','Ask Aura, the school assistant');f.innerHTML='<img alt="" src="'+window.SCL_AURA_IMG+'">';
  var p=D.createElement('section');p.id='auraPanel';p.setAttribute('aria-label','Aura assistant');
- p.innerHTML='<div class="au-h"><img alt="Aura" src="'+window.SCL_AURA_IMG+'"><div><b>Aura</b><small>School assistant · ask anything</small></div><button type="button" aria-label="Close" id="auX">×</button></div><div class="au-m" id="auM" aria-live="polite"></div><div class="au-q" id="auQ"></div><form class="au-f" id="auF"><input id="auI" autocomplete="off" placeholder="Ask about the school or any topic"><button type="submit">Send</button></form>';
- D.body.appendChild(f);D.body.appendChild(p);
+ p.innerHTML='<div class="au-h"><img alt="Aura" src="'+window.SCL_AURA_IMG+'"><div><b>Aura</b><small>School assistant + Educational Intelligence</small></div><button type="button" aria-label="Close" id="auX">×</button></div><div class="au-m" id="auM" aria-live="polite"></div><div class="au-q" id="auQ"></div><form class="au-f" id="auF"><input id="auI" autocomplete="off" placeholder="Ask about the school or any topic"><button type="submit">Send</button></form>';
+ D.body.appendChild(p);
  f.onclick=auraOpen;$('#auX').onclick=function(){p.classList.remove('open')};
  $('#auF').onsubmit=function(e){e.preventDefault();var i=$('#auI'),q=i.value.trim();if(!q)return;i.value='';auraAsk(q)};
- $('#auQ').innerHTML=['How do I register?','How do I pay fees?','JSS1 Mathematics week 1','Explain photosynthesis'].map(function(q){return'<button type="button">'+q+'</button>'}).join('');
+ $('#auQ').innerHTML=['How do I register?','How do I pay fees?','JSS1 Mathematics week 1','Explain photosynthesis','Check my writing'].map(function(q){return'<button type="button">'+q+'</button>'}).join('');
  $('#auQ').onclick=function(e){if(e.target.tagName==='BUTTON')auraAsk(e.target.textContent)};
- say('a','Hello, I am **Aura**. I can answer anything about this school, show you the weekly scheme of work, and explain any topic with video suggestions for learning.');
+ say('a','Hello, I am **Aura**. I now include **Educational Intelligence**: I can answer anything about this school, explain any topic or word, show the weekly scheme of work, check your writing (type **check writing:** then your text) and suggest video lessons.');
 }
 function auraOpen(){auraBuild();$('#auraPanel').classList.add('open');setTimeout(function(){$('#auI').focus()},50)}
+window.sclOpenAura=function(){auraOpen()};
 function say(who,html,acts,cls){var m=$('#auM'),b=D.createElement('div');b.className='au-b '+who;b.innerHTML=html;if(acts&&acts.length){var d=D.createElement('div');d.className='au-act '+(cls||'');acts.forEach(function(a){var e;if(a.href){e=D.createElement('a');e.href=a.href;e.target='_blank';e.rel='noopener'}else{e=D.createElement('button');e.type='button';e.onclick=a.fn}e.textContent=a.t;d.appendChild(e)});b.appendChild(d)}m.appendChild(b);m.scrollTop=m.scrollHeight;return b}
 function auraAsk(q){
  say('u',esc(q));var typing=say('a','<span class="au-dots"><i></i><i></i><i></i></span>');var low=q.toLowerCase();
  function done(html,acts,cls){typing.remove();say('a',html,acts,cls)}
+ if(/^\s*check my writing\s*$/i.test(q)){done('Paste your text like this: **check writing:** your text here. I will point out spelling, spacing, repeated words and capital-letter mistakes and show a corrected version.');return}
+ var wc=q.match(/^\s*(?:please\s+)?(?:check|correct|proofread|fix)\b[^:\n]{0,30}?(?:writing|grammar|spelling|essay|text|sentences?)\s*[:\-]\s*([\s\S]+)/i);
+ if(wc){done(auraProof(wc[1]));return}
  var cls=null;Object.keys(CLS).forEach(function(k){if(low.indexOf(k)>-1)cls=CLS[k]});
  if(cls&&/(week|term|scheme|topic|syllabus|curriculum|cover|teach)/.test(low)){
   loadScheme().then(function(S){
@@ -9698,8 +9722,23 @@ function auraAsk(q){
  var siteWords=/(school|scl|our|your|my child|fees|portal|website|site)/.test(low);
  if(best&&(bs>=2||siteWords)){done(mdl(best.a),(best.b||[]).map(function(b){return{t:b[0],fn:ACT[b[1]]}}));return}
  if(/^[\d\s+\-*\/().^%x×÷]+$/.test(q)&&/\d/.test(q)&&/[+\-*\/^%x×÷]/.test(q)){try{var v=Function('"use strict";return ('+q.replace(/[x×]/g,'*').replace(/÷/g,'/').replace(/\^/g,'**')+')')();done('<b>'+esc(q)+' = '+esc(v)+'</b>');return}catch(e){}}
- webAnswer(q).then(function(r){typing.remove();say('a',r.html,r.acts);},function(){done('I could not reach the internet just now. You can still search for this topic on YouTube.',[{t:'Search YouTube',href:'https://www.youtube.com/results?search_query='+encodeURIComponent(q)}],'au-yt')});
+ var ytq='https://www.youtube.com/results?search_query='+encodeURIComponent(q+' educational lesson');
+ function viaWeb(){webAnswer(q).then(function(r){typing.remove();say('a',r.html,r.acts);},function(){done('I could not reach the internet just now. You can still search for this topic on YouTube.',[{t:'Search YouTube',href:'https://www.youtube.com/results?search_query='+encodeURIComponent(q)}],'au-yt')})}
+ Promise.race([eduAsk(q),new Promise(function(_,r){setTimeout(r,12000)})]).then(function(tx){typing.remove();say('a',mdl(tx.length>1400?tx.slice(0,1400)+'…':tx).replace(/\n/g,'<br>'),[{t:'Find YouTube lesson',href:ytq},{t:'Official SCL YouTube',href:'https://www.youtube.com/@SHININGCHILDLEADERS'},{t:'More from the web',fn:function(){var tp=say('a','<span class="au-dots"><i></i><i></i><i></i></span>');webAnswer(q).then(function(r){tp.remove();say('a',r.html,r.acts)},function(){tp.remove();say('a','I could not reach the internet just now.')})}}])},viaWeb);
 }
+function eduAsk(q){return new Promise(function(res,rej){var inp=D.getElementById('sclAiInput'),out=D.getElementById('sclAiResponse');if(!inp||!out||typeof window.sclAskAI!=='function')return rej();inp.value=q;Promise.resolve(window.sclAskAI()).then(function(){var tx=(out.textContent||'').trim();if(!tx||/^Thinking/.test(tx)||/^(I can understand a single word|Writing support:|I can build a revision)/.test(tx))return rej();res(tx)},rej)})}
+function auraProof(src){
+ var fixes=[],s=String(src).trim();
+ var MS={teh:'the',recieve:'receive',definately:'definitely',seperate:'separate',occured:'occurred',untill:'until',wich:'which',becouse:'because',beacuse:'because',alot:'a lot',goverment:'government',enviroment:'environment',freind:'friend',beleive:'believe',tomorow:'tomorrow',tommorow:'tomorrow',writting:'writing',adress:'address',accomodate:'accommodate',necesary:'necessary',occassion:'occasion',thier:'their',wierd:'weird',diffrent:'different',intresting:'interesting',peice:'piece',sucess:'success',sucessful:'successful',knowlege:'knowledge'};
+ s=s.replace(/\b[A-Za-z']+\b/g,function(w){var k=w.toLowerCase();if(Object.prototype.hasOwnProperty.call(MS,k)){var r=MS[k];if(w[0]===w[0].toUpperCase())r=r[0].toUpperCase()+r.slice(1);fixes.push('Spelling: "'+w+'" → "'+r+'"');return r}return w});
+ s=s.replace(/\b(\w+)(\s+)\1\b/gi,function(m,a){fixes.push('Repeated word: "'+m.replace(/\s+/g,' ')+'" → "'+a+'"');return a});
+ s=s.replace(/[ \t]{2,}/g,function(){fixes.push('Extra spaces removed');return' '});
+ s=s.replace(/\s+([,.!?;:])/g,function(m,p){fixes.push('Space before "'+p+'" removed');return p});
+ s=s.replace(/\bi\b(?=[\s,']|$)/g,function(){fixes.push('"i" → "I"');return'I'});
+ s=s.replace(/(^|[.!?]\s+)([a-z])/g,function(m,a,b){fixes.push('Capital letter needed at the start of a sentence');return a+b.toUpperCase()});
+ if(!/[.!?]["')\]]?$/.test(s)){fixes.push('End the sentence with . ? or !');s+='.'}
+ var seen={},list=fixes.filter(function(f){if(seen[f])return false;seen[f]=1;return true}).slice(0,10);
+ return'<p><b>Corrected version</b></p><p>'+esc(s)+'</p>'+(list.length?'<p><b>What I changed</b></p><ul>'+list.map(function(f){return'<li>'+esc(f)+'</li>'}).join('')+'</ul>':'<p>No obvious spelling or spacing mistakes found.</p>')+'<p style="opacity:.7;font-size:12px">Quick check for common mistakes only; it does not judge meaning or advanced grammar.</p>'}
 function webAnswer(q){
  var topic=q.replace(/[?!.]+$/,'').replace(/^(please\s+)?(can you\s+)?(explain|tell me about|what is|what are|what's|who is|who was|define|describe|how does|how do|why is|why do|teach me)\s+(a |an |the )?/i,'').trim()||q;
  var W='https://en.wikipedia.org/w/api.php?format=json&origin=*&';
@@ -10029,46 +10068,111 @@ const ST={tab:'take',date:today(),cls:'Primary 1',period:'0',subject:'',teacher:
 let marks={};
 const uid=()=>'S'+Date.now().toString(36)+Math.random().toString(36).slice(2,5);
 function roster(c){const r=LS('sclStuRoster',[]);return c?r.filter(s=>String(s.cls).toLowerCase()===String(c).toLowerCase()):r}
-function recKey(){return [ST.date,ST.cls,isSec(ST.cls)?ST.period:'0'].join('|')}
-window.openStudentAttendance=function(){call('openM','sclSuiteModal');setTimeout(()=>window.renderStudentAttendance(),40)};
+function recKey(){return [ST.date,ST.cls,isSec(ST.cls)?ST.period:(ST.period==='7'?'7':'0')].join('|')}
+window.openStudentAttendance=function(){ST.autoAt=0;call('openM','sclSuiteModal');setTimeout(()=>window.renderStudentAttendance(),40)};
 window.renderStudentAttendance=function(){const b=$('sclSuiteBody');if(!b)return;try{QA('.scl-suite-tabs button').forEach(x=>x.classList.remove('active'));const t=$('sclTab-attendance');t&&t.classList.add('active')}catch(_){}
- const tabs=[['take','✅ Take attendance'],['admin','📊 Overview'],['roster','🧒 Students']];let h='<div class="scl300-chips" style="margin-bottom:10px">'+tabs.map(t=>'<button type="button" data-tab="'+t[0]+'" class="'+(ST.tab===t[0]?'on':'')+'" style="'+(ST.tab===t[0]?'background:#7b4dff;color:#fff;border-color:#7b4dff':'')+'">'+t[1]+'</button>').join('')+'</div>';
- h+=ST.tab==='take'?viewTake():ST.tab==='admin'?viewAdmin():viewRoster();b.innerHTML='<div style="color:#14061f">'+h+'</div>';wireAtt(b)};
-function viewTake(){const sec=isSec(ST.cls),list=roster(ST.cls),ex=(LS('sclStuAtt',{})[recKey()]||{}).marks||{};if(!Object.keys(marks).length||marks.__k!==recKey()){marks=Object.assign({__k:recKey()},ex)}
- let h='<div class="scl300-note">'+(sec?'<b>Secondary:</b> the subject teacher takes attendance every period (up to 6 times a day).':'<b>Primary / Early years:</b> the class teacher takes one register per day.')+' Parents <b>and</b> '+SCHOOL_EMAIL+' are notified after each save.</div>';
- h+='<div class="scl300-row3"><div><label>Date</label><input type="date" id="at-date" value="'+ST.date+'"></div><div><label>Class</label><select id="at-cls">'+CLASSES.map(c=>'<option'+(c===ST.cls?' selected':'')+'>'+c+'</option>').join('')+'</select></div><div><label>'+(sec?'Period':'Register')+'</label><select id="at-per">'+(sec?[1,2,3,4,5,6].map(p=>'<option value="'+p+'"'+(String(p)===ST.period?' selected':'')+'>Period '+p+'</option>').join(''):'<option value="0">Class-teacher register</option>')+'</select></div></div>';
- h+='<div class="scl300-row"><div><label>'+(sec?'Subject':'Class teacher')+'</label><input id="at-sub" value="'+esc(sec?ST.subject:ST.teacher)+'" placeholder="'+(sec?'e.g. Mathematics':'Teacher name')+'"></div><div><label>'+(sec?'Subject teacher':'Taken by')+'</label><input id="at-tch" value="'+esc(ST.teacher)+'" placeholder="Teacher name"></div></div>';
+ const tabs=[['take','✅ Take attendance'],['admin','📊 Overview'],['roster','🧒 Students'],['approve','✅ Approvals']];let h='<div class="scl300-chips" style="margin-bottom:10px">'+tabs.map(t=>'<button type="button" data-tab="'+t[0]+'" class="'+(ST.tab===t[0]?'on':'')+'" style="'+(ST.tab===t[0]?'background:#7b4dff;color:#fff;border-color:#7b4dff':'')+'">'+t[1]+'</button>').join('')+'</div>';
+ h+=ST.tab==='take'?viewTake():ST.tab==='admin'?viewAdmin():ST.tab==='approve'?viewApprove():viewRoster();b.innerHTML='<div style="color:#14061f">'+h+'</div>';wireAtt(b)};
+
+/* ===== v96: automated student attendance (two buttons, teacher identity, timetable rules) ===== */
+const GRACE=5,TZ2='Africa/Lagos';
+/* Primary registers: morning 8:00-11:59 (late-orange from 8:35), afternoon 12:00-3:00 (register ~1:00 PM, late-orange from 1:05). Period codes: 0 = morning, 7 = afternoon. Mon-Thu only for afternoon. */
+const PRI={'0':{label:'Morning register',open:480,start:510,end:720},'7':{label:'Afternoon register',open:720,start:780,end:900}};
+const priCode=()=>ST.period==='7'?'7':'0';const priPick=n=>(n&&n.min>=720&&n.dow!==5)?'7':'0';const perLbl=p=>p==='0'?'Morning':p==='7'?'Afternoon':'P'+p;
+const PER2={A:{p1:['08:30','09:25'],p2:['09:25','10:20'],p3:['10:20','11:15'],p4:['11:30','12:25'],p5:['13:05','14:00'],p6:['14:00','14:55']},FRI:{p1:['08:30','09:20'],p2:['09:20','10:10'],p3:['10:10','11:00'],p4:['11:00','11:50']}};
+const ncl=s=>String(s||'').toLowerCase().replace(/\s+/g,'').replace(/^sss/,'ss');
+const hmin=x=>{const a=String(x||'0:0').split(':');return(+a[0]||0)*60+(+a[1]||0)};
+const nm2=s=>String(s||'').toLowerCase().replace(/[^a-z]+/g,' ').trim();
+function lagos(){const d=new Date();return{date:d.toLocaleDateString('en-CA',{timeZone:TZ2}),min:hmin(d.toLocaleTimeString('en-GB',{timeZone:TZ2,hour:'2-digit',minute:'2-digit'})),dow:({sun:0,mon:1,tue:2,wed:3,thu:4,fri:5,sat:6})[d.toLocaleDateString('en-US',{timeZone:TZ2,weekday:'short'}).toLowerCase().slice(0,3)]}}
+const DAYS2=['sun','mon','tue','wed','thu','fri','sat'];
+const dayOf=date=>new Date(date+'T12:00:00Z').getUTCDay();
+function meU(){let a=null;try{a=JSON.parse(sessionStorage.getItem('sclAuthSession')||'null')}catch(_){}
+ if(!a||!(a.user||a.accessToken))return null;const u=a.user||{},md=Object.assign({},u.user_metadata||{},u.app_metadata||{});
+ const roles=(a.roles||md.roles||[]).map(String);
+ return{email:String(u.email||(a.profile&&a.profile.email)||'').trim().toLowerCase(),name:String((a.staff&&(a.staff.full_name||a.staff.name))||(a.profile&&a.profile.full_name)||md.full_name||md.name||'').trim(),roles,admin:roles.some(r=>/^(developer|technical_admin|management_admin|affairs_admin)$/i.test(r))}}
+function clsLabel(x){const k=ncl(x);return CLASSES.find(c=>ncl(c)===k)||x}
+function myAssign(){ /* every timetable / class-teacher assignment this device knows about, merged with the synced list */
+ const out=[];let w=[];try{w=JSON.parse(localStorage.getItem('sclWorkerRecords')||'[]')}catch(_){}
+ w.forEach(r=>{if(r.mode!=='staff'||r.role!=='Teacher')return;const em=String(r.email||'').trim().toLowerCase(),nmx=r.fullName||'',t=r.timetableRegistration;
+  if(t&&t.day&&t.className){const key=t.day==='fri'?'FRI':(t.variant||'A'),slots=PER2[key]||{};const sid=Object.keys(slots).find(s=>slots[s][0]===t.start&&slots[s][1]===t.end);if(sid)out.push({id:[ncl(t.className),key,t.day,sid].join('|'),cls:t.className,key,day:t.day,slot:sid,subject:t.subject||'',teacher:t.teacher||nmx,email:em})}
+  const m=String(r.notes||'').match(/\[TEACHING ASSIGNMENT\]\s*Level:\s*(\w+);\s*Classes:\s*([^;]*?);/);
+  if(m&&/primary/i.test(m[1]))m[2].split(',').map(s=>s.trim()).filter(s=>s&&s!=='none').forEach(c=>out.push({id:'P|'+ncl(c)+'|'+(em||nm2(nmx)),cls:c,primary:1,teacher:nmx,email:em}))});
+ try{const d=JSON.parse(localStorage.getItem('smart-tt-v2')||'null'),sec=d&&d.secondary||{};Object.keys(sec).forEach(c=>['A','FRI'].forEach(key=>{const dd=sec[c]&&sec[c][key]||{};Object.keys(dd).forEach(day=>Object.keys(dd[day]||{}).forEach(sid=>{const cell=dd[day][sid];if(cell&&cell.teacher&&cell.teacher.trim())out.push({id:[ncl(c),key,day,sid].join('|'),cls:c,key,day,slot:sid,subject:cell.subject||'',teacher:cell.teacher.trim(),email:''})}))}))}catch(_){}
+ return out}
+function pubAssign(){try{const have=live('sclTTAssign');myAssign().forEach(x=>{const o=have.find(y=>y.id===x.id);if(o&&o.teacher===x.teacher&&(o.email||'')===(x.email||'')&&(o.subject||'')===(x.subject||''))return;upsert('sclTTAssign',Object.assign({},x))})}catch(_){}}
+function allAssign(){const m=new Map();live('sclTTAssign').forEach(x=>m.set(x.id,x));myAssign().forEach(x=>m.set(x.id,x));return[...m.values()]}
+function isMine(x,u){return !!u&&((x.email&&u.email&&x.email===u.email)||(u.name&&x.teacher&&nm2(x.teacher)===nm2(u.name)))}
+function gateAtt(){const u=meU();
+ if(!u)return{ok:false,login:1,reason:'Sign in with your staff account to take attendance.'};
+ const n=lagos();
+ if(ST.date!==n.date)return{ok:false,reason:'Attendance can only be taken on the day itself ('+n.date+').',u};
+ const all=allAssign();
+ if(isSec(ST.cls)){const key=n.dow===5?'FRI':'A',slot='p'+ST.period,cell=all.find(x=>!x.primary&&x.id===[ncl(ST.cls),key,DAYS2[n.dow],slot].join('|'));
+  if(!cell)return{ok:false,reason:'No subject teacher is registered on the timetable for '+ST.cls+' Period '+ST.period+' today.',u};
+  if(!isMine(cell,u))return{ok:false,reason:'Only the subject teacher ('+cell.teacher+') can take '+ST.cls+' Period '+ST.period+'. No one else can do it for them.',u};
+  const pr=PER2[key]&&PER2[key][slot];if(pr&&n.min<hmin(pr[0])-15)return{ok:false,reason:'This period starts at '+pr[0]+'. You can take attendance from 15 minutes before it begins.',u};
+  return{ok:true,u,cell}}
+ const ok=all.some(x=>x.primary&&ncl(x.cls)===ncl(ST.cls)&&isMine(x,u))||live('sclAttApproved').some(x=>ncl(x.cls)===ncl(ST.cls)&&isMine(x,u));
+ if(!ok)return{ok:false,reason:'Only the '+ST.cls+' class teacher, or a staff member approved for this class, can take attendance.',u};
+ const pc=priCode(),ps=PRI[pc];
+ if(pc==='7'&&n.dow===5)return{ok:false,reason:'There is no afternoon register on Fridays. Only the morning register is taken on Friday.',u};
+ if(n.min<ps.open)return{ok:false,reason:ps.label+' opens at '+(pc==='0'?'8:00 AM':'12:00 noon')+'.',u};
+ return{ok:true,u}}
+function presentCode(){const n=lagos();if(ST.date!==n.date)return'P';let s,e;
+ if(isSec(ST.cls)){const pr=(PER2[n.dow===5?'FRI':'A']||{})['p'+ST.period];if(!pr)return'P';s=hmin(pr[0]);e=hmin(pr[1])}else{const ps=PRI[priCode()];s=ps.start;e=ps.end}
+ return(n.min>=s+GRACE&&n.min<e)?'L':'P'}
+function autoPick(){if(ST.autoAt&&Date.now()-ST.autoAt<600000)return;ST.autoAt=Date.now();const u=meU();if(!u)return;const n=lagos();ST.date=n.date;
+ const mine=allAssign().filter(x=>isMine(x,u));if(!mine.length)return;
+ const key=n.dow===5?'FRI':'A',sec=mine.filter(x=>!x.primary&&x.key===key&&x.day===DAYS2[n.dow]&&PER2[key]&&PER2[key][x.slot]);
+ if(sec.length){sec.sort((a,b)=>hmin(PER2[key][a.slot][0])-hmin(PER2[key][b.slot][0]));let pick=sec.find(x=>n.min>=hmin(PER2[key][x.slot][0])-15&&n.min<hmin(PER2[key][x.slot][1]))||sec.find(x=>hmin(PER2[key][x.slot][0])-15>n.min)||sec[sec.length-1];
+  ST.cls=clsLabel(pick.cls);ST.period=pick.slot.slice(1);ST.subject=pick.subject||'';ST.teacher=u.name||pick.teacher;marks={};return}
+ const pr=mine.find(x=>x.primary);if(pr){ST.cls=clsLabel(pr.cls);ST.period=priPick(n);ST.teacher=u.name||pr.teacher;marks={}}}
+async function loadRosterDb(quiet){try{const q=await sb().from('students').select('*').limit(1000);if(q.error)throw q.error;const rows=q.data||[];if(!rows.length){if(!quiet)fb('No registered students found in the school database yet.','warn');return}const r=roster(),have=new Set(r.map(s=>s.id));let n=0;rows.forEach(x=>{const id=String(x.student_id||x.id||'');const nm=x.child_name||x.full_name||x.name||[x.surname,x.first_name].filter(Boolean).join(' ');if(!id||!nm||have.has(id))return;r.push({id,name:nm,cls:normCls(x.class_name||x.class||x.selected_class),pe:x.parent_email||x.guardian_email||'',pp:x.parent_phone||x.guardian_phone||''});n++});if(n){SV('sclStuRoster',r);window.renderStudentAttendance()}if(!quiet)fb(n+' students loaded from the school database.','ok')}catch(e){if(!quiet)fb('Could not load from the database ('+(e&&e.message||'no access')+'). Add or paste students instead.','err')}}
+function gateBanner(g){if(g.ok)return'<div class="scl300-note" style="background:#e6f7ec">✅ Signed in as <b>'+esc(g.u.name||g.u.email)+'</b> — you can take this register.'+(isSec(ST.cls)?' The class is unlocked for you; you may also take it after the period ends.':'')+'</div>';
+ return'<div class="scl300-note" style="background:#ffe3e3"><b>Locked.</b> '+esc(g.reason)+(g.login?' <button type="button" class="scl300-cta" style="padding:6px 10px;margin:6px 0 0" id="at-login">Sign in</button>':'')+'</div>'}
+function viewApprove(){const adm=meU()&&meU().admin;if(!adm)return'<div class="scl300-note">Only school administrators can approve staff for primary classes.</div>';
+ const L=live('sclAttApproved');return'<div class="scl300-note"><b>Primary classes:</b> the class teacher is found automatically from their staff registration. Approve any other staff member for a class here.</div><div class="scl300-row3"><div><label>Class</label><select id="ap-c">'+CLASSES.filter(c=>!isSec(c)).map(c=>'<option>'+c+'</option>').join('')+'</select></div><div><label>Staff email</label><input id="ap-e" placeholder="staff@email.com"></div><div><label>Name</label><input id="ap-n"></div></div><button class="scl300-cta" id="ap-add" type="button">Approve staff</button><div style="overflow:auto"><table class="scl300-tbl"><tr><th>Class</th><th>Staff</th><th></th></tr>'+(L.map(x=>'<tr><td>'+esc(x.cls)+'</td><td>'+esc(x.teacher||'')+'<br><small>'+esc(x.email||'')+'</small></td><td><button type="button" data-apdel="'+esc(x.id)+'">Remove</button></td></tr>').join('')||'<tr><td colspan="3">None yet.</td></tr>')+'</table></div>'}
+function viewTake(){autoPick();pubAssign();if(!isSec(ST.cls)&&(ST.period!=='0'&&ST.period!=='7'||(ST.period==='7'&&dayOf(ST.date)===5)))ST.period='0';const G=gateAtt();const sec=isSec(ST.cls),list=roster(ST.cls),ex=(LS('sclStuAtt',{})[recKey()]||{}).marks||{};if(!Object.keys(marks).length||marks.__k!==recKey()){marks=Object.assign({__k:recKey()},ex)}
+ let h='<div class="scl300-note">'+(sec?'<b>Secondary:</b> the subject teacher takes attendance every period (up to 6 times a day).':'<b>Primary / Early years:</b> the class teacher takes the register twice a day Monday–Thursday (morning 8:00–11:59 and afternoon 12:00–3:00) and once on Friday (morning only).')+' Parents <b>and</b> '+SCHOOL_EMAIL+' are notified after each save.</div>';
+ h+=gateBanner(G);h+='<div class="scl300-row3"><div><label>Date</label><input type="date" id="at-date" value="'+ST.date+'"></div><div><label>Class</label><select id="at-cls">'+CLASSES.map(c=>'<option'+(c===ST.cls?' selected':'')+'>'+c+'</option>').join('')+'</select></div><div><label>'+(sec?'Period':'Register')+'</label><select id="at-per">'+(sec?[1,2,3,4,5,6].map(p=>'<option value="'+p+'"'+(String(p)===ST.period?' selected':'')+'>Period '+p+'</option>').join(''):'<option value="0"'+(ST.period!=='7'?' selected':'')+'>Morning register (8:00–11:59)</option>'+(dayOf(ST.date)===5?'':'<option value="7"'+(ST.period==='7'?' selected':'')+'>Afternoon register (12:00–3:00)</option>'))+'</select></div></div>';
+ h+='<div class="scl300-row"><div><label>'+(sec?'Subject':'Class teacher')+'</label><input id="at-sub"'+(G.ok?' readonly':'')+' value="'+esc(sec?ST.subject:ST.teacher)+'" placeholder="'+(sec?'e.g. Mathematics':'Teacher name')+'"></div><div><label>'+(sec?'Subject teacher':'Taken by')+'</label><input id="at-tch"'+(G.ok?' readonly':'')+' value="'+esc(ST.teacher)+'" placeholder="Teacher name"></div></div>';
  if(!list.length)return h+'<div class="scl300-note">No students in <b>'+esc(ST.cls)+'</b> yet. Open the <b>🧒 Students</b> tab to add, paste or load them.</div>';
  h+='<div style="margin:8px 0"><button class="scl300-cta alt" id="at-allp" type="button">✔ Mark all present</button><button class="scl300-cta warn" id="at-clr" type="button">↺ Clear</button></div><div style="overflow:auto"><table class="scl300-tbl"><tr><th>#</th><th>Student</th><th>Status</th></tr>';
- list.forEach((s,i)=>{h+='<tr><td>'+(i+1)+'</td><td><b>'+esc(s.name)+'</b><br><small>'+esc(s.id||'')+'</small></td><td><div class="scl300-chips" data-sid="'+esc(s.id)+'">'+[['P','Present'],['A','Absent'],['L','Late'],['E','Excused']].map(x=>'<button type="button" data-s="'+x[0]+'" class="'+(marks[s.id]===x[0]?'on':'')+'">'+x[1]+'</button>').join('')+'</div></td></tr>'});
+ list.forEach((s,i)=>{h+='<tr><td>'+(i+1)+'</td><td><b>'+esc(s.name)+'</b><br><small>'+esc(s.id||'')+'</small></td><td><div class="scl-at2" style="opacity:'+(G.ok?1:.45)+'" data-sid="'+esc(s.id)+'"><button type="button" data-s="P" class="p'+(marks[s.id]==='P'?' on':marks[s.id]==='L'?' on late':'')+'">✔ Present</button><button type="button" data-s="A" class="a'+(marks[s.id]==='A'?' on':'')+'">✖ Absent</button></div></td></tr>'});
  return h+'</table></div><button class="scl300-cta" id="at-save" type="button">💾 Save & notify parents</button>'}
 function stat(date){const all=LS('sclStuAtt',{}),c={P:0,A:0,L:0,E:0};Object.values(all).filter(r=>r.date===date).forEach(r=>Object.values(r.marks||{}).forEach(v=>{if(c[v]!=null)c[v]++}));return c}
 function viewAdmin(){const all=LS('sclStuAtt',{}),recs=Object.values(all).filter(r=>r.date===ST.date),c=stat(ST.date),t=c.P+c.A+c.L+c.E||1;
  let h='<div class="scl300-row"><div><label>Date</label><input type="date" id="at-date" value="'+ST.date+'"></div><div><label>Search a student (all dates)</label><input id="at-find" placeholder="Type a name…"></div></div><div class="scl300-stats"><div><b>'+c.P+'</b>Present</div><div><b>'+c.A+'</b>Absent</div><div><b>'+c.L+'</b>Late</div><div><b>'+Math.round((c.P+c.L)/t*100)+'%</b>Attendance rate</div></div>';
  h+='<div style="overflow:auto"><table class="scl300-tbl"><tr><th>Class</th><th>Period</th><th>Subject / Teacher</th><th>P</th><th>A</th><th>L</th><th>Taken</th></tr>';
- if(!recs.length)h+='<tr><td colspan="7">No attendance recorded for this date yet.</td></tr>';recs.sort((a,b)=>(a.cls+a.period).localeCompare(b.cls+b.period)).forEach(r=>{const m=Object.values(r.marks||{});h+='<tr><td>'+esc(r.cls)+'</td><td>'+(r.period==='0'?'Daily':'P'+r.period)+'</td><td>'+esc(r.subject||'—')+'<br><small>'+esc(r.teacher||'')+'</small></td><td>'+m.filter(x=>x==='P').length+'</td><td>'+m.filter(x=>x==='A').length+'</td><td>'+m.filter(x=>x==='L').length+'</td><td>'+new Date(r.savedAt).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})+'</td></tr>'});
+ if(!recs.length)h+='<tr><td colspan="7">No attendance recorded for this date yet.</td></tr>';recs.sort((a,b)=>(a.cls+a.period).localeCompare(b.cls+b.period)).forEach(r=>{const m=Object.values(r.marks||{});h+='<tr><td>'+esc(r.cls)+'</td><td>'+perLbl(r.period)+'</td><td>'+esc(r.subject||'—')+'<br><small>'+esc(r.teacher||'')+'</small></td><td>'+m.filter(x=>x==='P').length+'</td><td>'+m.filter(x=>x==='A').length+'</td><td>'+m.filter(x=>x==='L').length+'</td><td>'+new Date(r.savedAt).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})+'</td></tr>'});
  h+='</table></div><div id="at-found"></div><button class="scl300-cta alt" id="at-exp" type="button">📤 Export CSV</button><button class="scl300-cta warn" id="at-q" type="button">🔔 Parent notice queue ('+LS('sclStuNotify',[]).length+')</button>';return h}
 function viewRoster(){const r=roster();let h='<div class="scl300-note">Add students one by one, paste a list, or load those already registered. Parent email/phone is used for attendance notices.</div><div class="scl300-row3"><div><label>Student name</label><input id="rs-n"></div><div><label>Class</label><select id="rs-c">'+CLASSES.map(c=>'<option'+(c===ST.cls?' selected':'')+'>'+c+'</option>').join('')+'</select></div><div><label>Student ID (optional)</label><input id="rs-i"></div></div><div class="scl300-row3"><div><label>Parent name</label><input id="rs-pn"></div><div><label>Parent email</label><input id="rs-pe" type="email"></div><div><label>Parent phone</label><input id="rs-pp" type="tel"></div></div><button class="scl300-cta" id="rs-add" type="button">➕ Add student</button><button class="scl300-cta alt" id="rs-load" type="button">☁️ Load registered students</button>';
  h+='<label>Paste list — one per line: name, class, parent email, parent phone</label><textarea id="rs-bulk" rows="3" placeholder="Ada Obi, Primary 3, mum@mail.com, 08012345678"></textarea><button class="scl300-cta" id="rs-imp" type="button">📥 Import pasted list</button><div style="overflow:auto;margin-top:8px"><table class="scl300-tbl"><tr><th>Name</th><th>Class</th><th>Parent</th><th></th></tr>';
  r.slice(0,300).forEach(s=>{h+='<tr><td>'+esc(s.name)+'</td><td>'+esc(s.cls)+'</td><td>'+esc(s.pe||s.pp||'—')+'</td><td><button type="button" data-del="'+esc(s.id)+'" style="border:0;background:#ffe3e3;border-radius:8px;padding:4px 8px;cursor:pointer">🗑</button></td></tr>'});return h+'</table></div>'}
 function normCls(c){c=String(c||'').trim();const f=CLASSES.find(x=>x.toLowerCase().replace(/\s/g,'')===c.toLowerCase().replace(/\s/g,''));return f||c}
 function wireAtt(b){QA('[data-tab]',b).forEach(x=>x.onclick=()=>{ST.tab=x.dataset.tab;window.renderStudentAttendance()});
- const on=(id,fn)=>{const e=b.querySelector('#'+id);if(e)e.onchange=fn};on('at-date',e=>{ST.date=e.target.value;window.renderStudentAttendance()});on('at-cls',e=>{ST.cls=e.target.value;ST.period=isSec(ST.cls)?'1':'0';marks={};window.renderStudentAttendance()});on('at-per',e=>{ST.period=e.target.value;marks={};window.renderStudentAttendance()});
+ const on=(id,fn)=>{const e=b.querySelector('#'+id);if(e)e.onchange=fn};on('at-date',e=>{ST.date=e.target.value;window.renderStudentAttendance()});on('at-cls',e=>{ST.cls=e.target.value;ST.period=isSec(ST.cls)?'1':priPick(lagos());marks={};window.renderStudentAttendance()});on('at-per',e=>{ST.period=e.target.value;marks={};window.renderStudentAttendance()});
  const sub=b.querySelector('#at-sub'),tch=b.querySelector('#at-tch');if(sub)sub.oninput=()=>{if(isSec(ST.cls))ST.subject=sub.value;else ST.teacher=sub.value};if(tch)tch.oninput=()=>ST.teacher=tch.value;
- QA('.scl300-chips[data-sid] button',b).forEach(x=>x.onclick=()=>{const sid=x.parentNode.dataset.sid;marks[sid]=x.dataset.s;QA('button',x.parentNode).forEach(y=>y.classList.toggle('on',y===x))});
+ QA('.scl-at2[data-sid] button',b).forEach(x=>x.onclick=()=>{const g=gateAtt();if(!g.ok){fb(g.reason,'err',4200);return}const sid=x.parentNode.dataset.sid,cur=marks[sid];
+  if(x.dataset.s==='P'){if(cur==='P'||cur==='L')delete marks[sid];else marks[sid]=presentCode()}else{if(cur==='A')delete marks[sid];else marks[sid]='A'}
+  const v=marks[sid],pb=x.parentNode.querySelector('.p'),ab=x.parentNode.querySelector('.a');pb.className='p'+(v==='P'?' on':v==='L'?' on late':'');ab.className='a'+(v==='A'?' on':'')});
+ const lg=b.querySelector('#at-login');if(lg)lg.onclick=()=>{try{call('closeM','sclSuiteModal');call('openM','loginModal')}catch(_){}};
+ const apd=b.querySelector('#ap-add');if(apd)apd.onclick=()=>{if(!(meU()&&meU().admin)){fb('Administrators only.','err');return}const em=v('ap-e').toLowerCase(),nmx=v('ap-n'),c=v('ap-c');if(!em&&!nmx){fb('Enter the staff email or name.','err');return}upsert('sclAttApproved',{id:ncl(c)+'|'+(em||nm2(nmx)),cls:c,email:em,teacher:nmx});fb('Approved for '+c+'.','ok');window.renderStudentAttendance()};
+ QA('[data-apdel]',b).forEach(x=>x.onclick=()=>{remove('sclAttApproved',x.dataset.apdel);window.renderStudentAttendance()});
  const bt=(id,fn)=>{const e=b.querySelector('#'+id);if(e)e.onclick=fn};
- bt('at-allp',()=>{roster(ST.cls).forEach(s=>marks[s.id]='P');window.renderStudentAttendance();fb('Everyone marked present — adjust any exceptions.','info')});bt('at-clr',()=>{marks={__k:recKey()};window.renderStudentAttendance()});
+ bt('at-allp',()=>{const g=gateAtt();if(!g.ok){fb(g.reason,'err',4200);return}roster(ST.cls).forEach(s=>{if(!marks[s.id])marks[s.id]=presentCode()});window.renderStudentAttendance();fb('Everyone marked present — adjust any exceptions.','info')});bt('at-clr',()=>{marks={__k:recKey()};window.renderStudentAttendance()});
+ if(ST.tab==='take'&&!roster(ST.cls).length&&!ST.rosterTried){ST.rosterTried=1;loadRosterDb(true)}
  bt('at-save',saveAtt);bt('at-exp',expCsv);bt('at-q',showQueue);
- const f=b.querySelector('#at-find');if(f)f.oninput=()=>{const q=f.value.toLowerCase().trim(),out=b.querySelector('#at-found');if(!q){out.innerHTML='';return}const rows=[];Object.values(LS('sclStuAtt',{})).forEach(r=>{const ros=roster(r.cls);Object.keys(r.marks||{}).forEach(id=>{const s=ros.find(x=>x.id===id);if(s&&s.name.toLowerCase().includes(q))rows.push([r.date,s.name,r.cls,r.period==='0'?'Daily':'P'+r.period,r.marks[id]])})});out.innerHTML=rows.length?'<table class="scl300-tbl"><tr><th>Date</th><th>Student</th><th>Class</th><th>Period</th><th>Status</th></tr>'+rows.slice(0,60).map(r=>'<tr><td>'+r.join('</td><td>')+'</td></tr>').join('')+'</table>':'<div class="scl300-note">No records for that name.</div>'};
+ const f=b.querySelector('#at-find');if(f)f.oninput=()=>{const q=f.value.toLowerCase().trim(),out=b.querySelector('#at-found');if(!q){out.innerHTML='';return}const rows=[];Object.values(LS('sclStuAtt',{})).forEach(r=>{const ros=roster(r.cls);Object.keys(r.marks||{}).forEach(id=>{const s=ros.find(x=>x.id===id);if(s&&s.name.toLowerCase().includes(q))rows.push([r.date,s.name,r.cls,perLbl(r.period),r.marks[id]])})});out.innerHTML=rows.length?'<table class="scl300-tbl"><tr><th>Date</th><th>Student</th><th>Class</th><th>Period</th><th>Status</th></tr>'+rows.slice(0,60).map(r=>'<tr><td>'+r.join('</td><td>')+'</td></tr>').join('')+'</table>':'<div class="scl300-note">No records for that name.</div>'};
  bt('rs-add',()=>{const n=b.querySelector('#rs-n').value.trim();if(!n){fb('Enter the student name.','err');return}const r=roster();r.push({id:b.querySelector('#rs-i').value.trim()||uid(),name:n,cls:b.querySelector('#rs-c').value,pn:b.querySelector('#rs-pn').value.trim(),pe:b.querySelector('#rs-pe').value.trim(),pp:b.querySelector('#rs-pp').value.trim()});SV('sclStuRoster',r);fb(n+' added to '+b.querySelector('#rs-c').value+'.','ok');window.renderStudentAttendance()});
  bt('rs-imp',()=>{const lines=b.querySelector('#rs-bulk').value.split('\n').map(l=>l.trim()).filter(Boolean);if(!lines.length){fb('Paste at least one line.','err');return}const r=roster();lines.forEach(l=>{const p=l.split(',').map(x=>x.trim());r.push({id:uid(),name:p[0],cls:normCls(p[1])||ST.cls,pe:p[2]||'',pp:p[3]||''})});SV('sclStuRoster',r);fb(lines.length+' students imported.','ok');window.renderStudentAttendance()});
  bt('rs-load',async()=>{fb('Loading registered students…','info',1200);try{const q=await sb().from('students').select('*').limit(1000);if(q.error)throw q.error;const rows=q.data||[];if(!rows.length){fb('No registered students found in the school database yet.','warn');return}const r=roster(),have=new Set(r.map(s=>s.id));let n=0;rows.forEach(x=>{const id=String(x.student_id||x.id||'');const nm=x.child_name||x.full_name||x.name||[x.surname,x.first_name].filter(Boolean).join(' ');if(!id||!nm||have.has(id))return;r.push({id,name:nm,cls:normCls(x.class_name||x.class||x.selected_class),pe:x.parent_email||x.guardian_email||'',pp:x.parent_phone||x.guardian_phone||''});n++});SV('sclStuRoster',r);fb(n+' students loaded from the school database.','ok');window.renderStudentAttendance()}catch(e){fb('Could not load from the database ('+(e&&e.message||'no access')+'). Add or paste students instead.','err')}});
  QA('[data-del]',b).forEach(x=>x.onclick=()=>{SV('sclStuRoster',roster().filter(s=>s.id!==x.dataset.del));fb('Student removed.','ok');window.renderStudentAttendance()})}
-async function saveAtt(){const list=roster(ST.cls);if(!list.length){fb('Add students to this class first.','err');return}const un=list.filter(s=>!marks[s.id]);if(un.length){fb(un.length+' student(s) not marked yet — mark everyone (use "Mark all present").','err');return}
+async function saveAtt(){const G0=gateAtt();if(!G0.ok){fb(G0.reason,'err',4500);return}ST.teacher=G0.u.name||ST.teacher;const list=roster(ST.cls);if(!list.length){fb('Add students to this class first.','err');return}const un=list.filter(s=>!marks[s.id]);if(un.length){fb(un.length+' student(s) not marked yet — mark everyone (use "Mark all present").','err');return}
  const sec=isSec(ST.cls);if(sec&&!ST.subject.trim()){fb('Enter the subject for this period.','err');return}
- const rec={date:ST.date,cls:ST.cls,period:sec?ST.period:'0',subject:ST.subject,teacher:ST.teacher,marks:Object.fromEntries(list.map(s=>[s.id,marks[s.id]])),savedAt:Date.now()};const all=LS('sclStuAtt',{});all[recKey()]=rec;SV('sclStuAtt',all);
- let synced=false;try{const rows=list.map(s=>({attendance_date:rec.date,class_name:rec.cls,period:Number(rec.period),subject:rec.subject||null,teacher_name:rec.teacher||null,student_id:s.id,student_name:s.name,status:{P:'present',A:'absent',L:'late',E:'excused'}[marks[s.id]]}));const q=await sb().from('student_attendance').insert(rows);if(!q.error)synced=true}catch(_){}
- const full={P:'present',A:'absent',L:'late',E:'excused'},when=rec.date+(sec?' · Period '+rec.period+(rec.subject?' ('+rec.subject+')':''):' · daily register'),q=LS('sclStuNotify',[]);
+ const rec={date:ST.date,cls:ST.cls,period:sec?ST.period:priCode(),subject:ST.subject,teacher:ST.teacher,marks:Object.fromEntries(list.map(s=>[s.id,marks[s.id]])),savedAt:Date.now()};const all=LS('sclStuAtt',{});all[recKey()]=rec;SV('sclStuAtt',all);try{upsert('sclAttLog',{id:recKey(),date:rec.date,cls:rec.cls,period:rec.period,subject:rec.subject,teacher:rec.teacher,by:G0.u.email,marks:rec.marks,savedAt:rec.savedAt})}catch(_){}
+ let synced=false;try{const rows=list.map(s=>({attendance_date:rec.date,class_name:rec.cls,period:Number(rec.period),subject:rec.subject||null,teacher_name:rec.teacher||null,taken_by_email:G0.u.email||null,student_id:s.id,student_name:s.name,status:{P:'present',A:'absent',L:'late',E:'excused'}[marks[s.id]]}));const q=await sb().from('student_attendance').upsert(rows,{onConflict:'attendance_date,class_name,period,student_id'});if(!q.error)synced=true}catch(_){}
+ const full={P:'present',A:'absent',L:'late',E:'excused'},when=rec.date+(sec?' · Period '+rec.period+(rec.subject?' ('+rec.subject+')':''):' · '+PRI[priCode()].label.toLowerCase()),q=LS('sclStuNotify',[]);
  list.forEach(s=>q.push({id:uid(),at:Date.now(),student:s.name,cls:rec.cls,status:marks[s.id],when,pe:s.pe,pp:s.pp,msg:'Dear Parent, '+s.name+' ('+rec.cls+') was marked '+full[marks[s.id]]+' — '+when+'. Shining Child Leaders School.'}));SV('sclStuNotify',q.slice(-1500));
  const c={P:0,A:0,L:0,E:0};Object.values(rec.marks).forEach(v=>c[v]++);fb('Attendance saved: '+c.P+' present, '+c.A+' absent, '+c.L+' late.'+(synced?' Synced to the school database.':' Saved on this device (database table not connected yet).'),'ok',4200);
  const res=await window.sclNotifyBatch(list.map(s=>({email:s.pe,phone:s.pp,subject:'Attendance: '+s.name+' — '+when,text:'Dear Parent, '+s.name+' ('+rec.cls+') was marked '+full[marks[s.id]]+' — '+when+'. Shining Child Leaders School.'})),{kind:'attendance',summary:'Attendance '+rec.cls+' — '+when+': '+c.P+' present, '+c.A+' absent, '+c.L+' late, '+c.E+' excused.'});
@@ -10076,6 +10180,30 @@ async function saveAtt(){const list=roster(ST.cls);if(!list.length){fb('Add stud
  const m=modal300('sclAttDone','<h3>✅ Saved — notify parents</h3><div class="scl300-stats"><div><b>'+c.P+'</b>Present</div><div><b>'+c.A+'</b>Absent</div><div><b>'+c.L+'</b>Late</div><div><b>'+c.E+'</b>Excused</div></div><div class="scl300-note">'+(res.mode==='auto'?'Notices were <b>sent automatically</b> to '+res.sent+' parent contact(s) and the school email <b>'+SCHOOL_EMAIL+'</b>.':'Notices are saved in the Notification Outbox for every parent and the school email <b>'+SCHOOL_EMAIL+'</b>. Automatic sending is not connected on the server yet, so use these one-tap buttons:')+'</div><a class="scl300-cta" style="display:inline-block;text-decoration:none" href="mailto:'+SCHOOL_EMAIL+'?bcc='+encodeURIComponent(bcc)+'&subject='+encodeURIComponent('Attendance '+rec.cls+' '+when)+'&body='+body+'">📧 Email school + all parents</a><div style="margin-top:8px;overflow:auto"><table class="scl300-tbl"><tr><th>Student</th><th>Status</th><th>Send</th></tr>'+list.map(s=>'<tr><td>'+esc(s.name)+'</td><td>'+full[marks[s.id]]+'</td><td>'+(s.pp?'<a href="https://wa.me/'+String(s.pp).replace(/\D/g,'').replace(/^0/,'234')+'?text='+encodeURIComponent('Dear Parent, '+s.name+' ('+rec.cls+') was marked '+full[marks[s.id]]+' — '+when+'. Shining Child Leaders School.')+'" target="_blank" rel="noopener">💬 WhatsApp</a> ':'')+(s.pe?'<a href="mailto:'+esc(s.pe)+'?cc='+SCHOOL_EMAIL+'&subject='+encodeURIComponent('Attendance: '+s.name)+'&body='+encodeURIComponent('Dear Parent, '+s.name+' ('+rec.cls+') was marked '+full[marks[s.id]]+' — '+when+'.')+'">✉️ Email</a>':(s.pp?'':'<small>no contact</small>'))+'</td></tr>').join('')+'</table></div>')}
 function showQueue(){const q=LS('sclStuNotify',[]).slice(-60).reverse();modal300('sclQueue','<h3>🔔 Parent notice queue</h3><div class="scl300-note">Latest 60 notices. Each one also goes to '+SCHOOL_EMAIL+'.</div><div style="overflow:auto"><table class="scl300-tbl"><tr><th>When</th><th>Student</th><th>Notice</th></tr>'+(q.map(n=>'<tr><td>'+new Date(n.at).toLocaleString()+'</td><td>'+esc(n.student)+'</td><td>'+esc(n.msg)+'</td></tr>').join('')||'<tr><td colspan="3">Nothing queued yet.</td></tr>')+'</table></div>')}
 function expCsv(){const ros=roster(),rows=[['Date','Class','Period','Subject','Teacher','Student','Status']];Object.values(LS('sclStuAtt',{})).forEach(r=>Object.keys(r.marks||{}).forEach(id=>{const s=ros.find(x=>x.id===id);rows.push([r.date,r.cls,r.period,r.subject,r.teacher,s?s.name:id,r.marks[id]])}));const csv=rows.map(r=>r.map(x=>'"'+String(x==null?'':x).replace(/"/g,'""')+'"').join(',')).join('\n'),a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='student-attendance.csv';a.click();fb('Attendance exported as CSV.','ok')}
+/* ===== v97: attendance -> extra marks on every subject of the term result ===== */
+/* 90-100% = 10 | 70-89% = 8 | 50-69% = 6 | 40-49% = 4 | 30-39% = 3 | 10-29% = 2 | 1-9% = 1 | 0% = 0 */
+const ATT_BANDS=[[90,10],[70,8],[50,6],[40,4],[30,3],[10,2],[1,1],[0,0]];
+function attMarksFor(p){for(const b of ATT_BANDS)if(p>=b[0])return b[1];return 0}
+function termRange(term,session){const m=String(session||'').match(/(\d{4})\s*[\/\-]\s*(\d{4})/);const y=m?+m[1]:new Date().getFullYear(),t=String(term||'').toLowerCase();
+ if(/first|^1/.test(t))return[y+'-09-01',y+'-12-31'];if(/second|^2/.test(t))return[(y+1)+'-01-01',(y+1)+'-04-30'];return[(y+1)+'-05-01',(y+1)+'-08-31']}
+function attRecords(){const m=new Map();Object.values(LS('sclStuAtt',{})).forEach(r=>{if(r&&r.date)m.set(r.date+'|'+r.cls+'|'+r.period,r)});live('sclAttLog').forEach(r=>{if(!r||!r.date)return;const k=r.date+'|'+r.cls+'|'+r.period;if(!m.has(k))m.set(k,r)});return[...m.values()]}
+function attLocal(sid,name,term,session){const rg=termRange(term,session),nn=nm2(name);let P=0,T=0;
+ attRecords().forEach(r=>{if(r.date<rg[0]||r.date>rg[1]||!r.marks)return;let id=null;if(sid&&r.marks[sid]!=null)id=sid;else if(nn){const s=roster(r.cls).find(x=>nm2(x.name)===nn);if(s&&r.marks[s.id]!=null)id=s.id}if(!id)return;T++;if(r.marks[id]!=='A')P++});return{present:P,total:T}}
+async function attDb(sid,term,session){try{if(!sid||!sb()||!sb().from)return null;const rg=termRange(term,session);const q=await sb().from('student_attendance').select('status').eq('student_id',sid).gte('attendance_date',rg[0]).lte('attendance_date',rg[1]).limit(3000);if(q.error||!q.data||!q.data.length)return null;let P=0;q.data.forEach(x=>{if(x.status!=='absent')P++});return{present:P,total:q.data.length}}catch(_){return null}}
+window.sclAttBonus=async function(sid,name,term,session){let s=await attDb(sid,term,session);if(!s)s=attLocal(sid,name,term,session);if(!s.total)return{total:0,present:0,pct:null,marks:0};const pct=Math.round(s.present/s.total*100);return{total:s.total,present:s.present,pct,marks:attMarksFor(pct)}};
+/* grade scale used only when attendance marks change a total - edit here if the school scale differs */
+const GRADES=[[80,'A','Excellent'],[70,'B','Very Good'],[60,'C','Good'],[50,'D','Fair'],[40,'E','Pass'],[0,'F','Fail']];
+const gradeOfTotal=t=>GRADES.find(g=>t>=g[0])||GRADES[GRADES.length-1];
+if(typeof window.renderResults==='function'&&!window.renderResults.__att){
+ const wrapped=async function(list){const el=$('resultStudentId'),sid=el?String(el.value||'').trim():'';let html='';
+  for(const r of (list||[])){let b={marks:0,total:0,pct:null};try{b=await window.sclAttBonus(r.studentId||sid,r.studentName,r.term,r.session)}catch(_){}
+   const subs=(r.subjects||[]).map(x=>{const base=(x.total!=null&&x.total!=='')?+x.total:((+x.ca||0)+(+x.exam||0));if(!b.marks)return{x,att:0,total:x.total,grade:x.grade,remark:x.remark};const nt=Math.min(100,base+b.marks),g=gradeOfTotal(nt);return{x,att:b.marks,total:nt,grade:g[1],remark:g[2]}});
+   let avg=r.average;if(b.marks&&subs.length){const t=subs.map(z=>+z.total).filter(n=>!isNaN(n));if(t.length)avg=(t.reduce((a,c)=>a+c,0)/t.length).toFixed(1)}
+   const rows=subs.map((z,i)=>'<tr><td>'+(i+1)+'</td><td>'+esc(z.x.subject||'')+'</td><td>'+esc(z.x.ca==null?'':z.x.ca)+'</td><td>'+esc(z.x.exam==null?'':z.x.exam)+'</td><td>'+(b.total?'+'+z.att:'—')+'</td><td><b>'+esc(z.total==null?'':z.total)+'</b></td><td>'+esc(z.grade||'')+'</td><td>'+esc(z.remark||'')+'</td></tr>').join('');
+   const note=b.total?'<p style="margin:6px 0"><b>Attendance:</b> '+b.pct+'% ('+b.present+' of '+b.total+' registers present) — <b>'+(b.marks?'+'+b.marks+' extra mark'+(b.marks>1?'s':'')+' added to every subject.':'no extra marks.')+'</b></p>':'<p style="margin:6px 0"><b>Attendance:</b> no attendance record found for this term, so no attendance marks were added.</p>';
+   html+='<section class="paybox result-card"><h3 style="margin:0">'+esc(r.resultType||'Student Report Card')+'</h3><p><b>'+esc(r.studentName)+'</b> | '+esc(r.class)+' | '+esc(r.term)+' | '+esc(r.session)+'</p><table class="fee-table"><thead><tr><th>S/N</th><th>Subject</th><th>CA</th><th>Exam</th><th>Attendance</th><th>Total</th><th>Grade</th><th>Remark</th></tr></thead><tbody>'+rows+'</tbody></table><div class="paybox"><b>General Result</b>'+note+'<p>'+(r.position?'Position: '+esc(r.position):'')+(avg?' | Average: '+esc(avg):'')+'</p><p>'+esc(r.teacherComment||'')+'</p></div></section>'}
+  const rv=$('resultView');if(rv){rv.innerHTML=html+'<p style="text-align:right"><button class="btn gold" onclick="printResult()">PRINT RESULTS</button></p>';rv.classList.remove('hidden')}};
+ wrapped.__att=1;window.renderResults=wrapped}
 /* ---------- self-test ---------- */
 window.sclSelfTest=function(){const rows=[];const seen=new Set();QA('.scl-acc-body button,#sclShortcutGrid button,.scl-suite-all-tools button,.scl-home-action-clean button,nav a[onclick]').forEach(b=>{const t=label(b),oc=b.getAttribute('onclick')||'';if(!oc||seen.has(t+oc))return;seen.add(t+oc);const names=(oc.match(/(?:^|[;{\s])([A-Za-z_$][\w$]*)\s*\(/g)||[]).map(x=>x.replace(/[;{\s(]/g,'')).filter(n=>!KW.has(n));const bad=names.filter(n=>typeof window[n]!=='function');rows.push([t,bad.length?'❌ missing: '+bad.join(', '):'✅ connected'])});
  const sys=[['Student attendance screen',typeof window.renderStudentAttendance==='function'],['CBT / Assignments / Lesson notes / Bulk screens',typeof window.sclOpenCbt==='function'],['Notification outbox',typeof window.sclOpenOutbox==='function'],['School database connection',!!(sb()&&sb().auth)],['Biometrics (https + device)',bioOK()],['Camera available',!!(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia)]];
@@ -10089,7 +10217,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 /* ====================== v301: notifications, cloud sync, CBT, assignments, lessons, bulk ====================== */
 const SUP=()=>window.SCL_SUPABASE_URL||'',PUBK=()=>window.SCL_SUPABASE_PUBLISHABLE_KEY||'';
 const K={cbt:'sclCBT',cba:'sclCBTAttempts',asg:'sclAssign',sub:'sclAssignSubs',les:'sclLessons',staff:'sclStaffRoster'};
-const SYNCK=[K.cbt,K.cba,K.asg,K.sub,K.les,K.staff];
+const SYNCK=[K.cbt,K.cba,K.asg,K.sub,K.les,K.staff,'sclTTAssign','sclAttApproved','sclAttLog'];
 const arr=k=>{const v=LS(k,[]);return Array.isArray(v)?v:[]},live=k=>arr(k).filter(x=>!x.del);
 const nid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 const v=id=>{const e=$(id);return e?String(e.value||'').trim():''};
@@ -10264,7 +10392,7 @@ function brHtml(){const set=BR.filter(b=>b.latitude!=null&&b.longitude!=null).le
  '<div class="scl-att-card" data-scl-keep style="color:#14061f"><h4>➕ Add another branch</h4><div class="scl300-row"><div><label>Branch name</label><input id="br-n"></div><div><label>Radius (m)</label><input id="br-r2" type="number" value="150"></div></div><label>Full address</label><input id="br-a"><button class="scl300-cta" type="button" data-br="add">➕ Add branch</button></div>'}
 function brSay(t,type){const s=$('br-status');if(!s)return;s.style.display='block';s.style.background=type==='err'?'#ffe3e3':type==='ok'?'#e6f7ec':'#fff6d6';s.textContent=t;fb(t,type||'info',type==='err'?5000:2500)}
 async function brSave(i,lat,lng,rad){const b=BR[i];if(!b)throw new Error('Branch not found — reload the list.');const id=bid(b),body={latitude:lat,longitude:lng};if(rad)body.radius_m=rad;let how='';
- if(id){try{await brFetch('branches','PATCH',Object.assign({id},body));how='id'}catch(e){if(!/uuid|id/i.test(e.message))throw e}}
+ if(id){try{await brFetch('branches','PATCH',Object.assign({id},body));how='id'}catch(e){if(!/uuid|id|permission denied|authorize/i.test(e.message))throw e}}
  if(!how){window.__sclQuiet=(window.__sclQuiet||0)+1;try{const q=await sb().from('school_branches').update(body).eq('name',b.name).select();if(q.error)throw q.error;if(!q.data||!q.data.length)throw new Error('The database refused the update (your account may not have admin rights, or the branch name does not match).');how='name'}finally{window.__sclQuiet--}}
  await brLoad();const nb=BR.find(x=>x.name===b.name);if(nb&&(nb.latitude==null||nb.longitude==null))throw new Error('Saved, but the list still shows NOT SET — press Reload and check again.');return how}
 async function brRender(){const box=$('sclBranchAdminBody');if(!box)return;box.innerHTML=brHtml();box.onclick=async e=>{const t=e.target.closest('[data-br]');if(!t)return;const a=t.dataset.br;
@@ -10274,7 +10402,7 @@ async function brRender(){const box=$('sclBranchAdminBody');if(!box)return;box.i
     const how=await brSave(i,c.latitude,c.longitude,0);brSay('✅ '+BR[i].name+' approved — GPS saved (accuracy ±'+acc+' m).','ok');brRender();setTimeout(()=>brSay('✅ '+BR[i].name+' approved.','ok'),50)}
    if(a==='man'){const i=+$('br-sel').value,lat=parseFloat($('br-lat').value),lng=parseFloat($('br-lng').value),rad=+$('br-rad').value||150;if(!isFinite(lat)||!isFinite(lng)||Math.abs(lat)>90||Math.abs(lng)>180){brSay('Enter valid numbers, e.g. latitude 6.5832 and longitude 3.9894.','err');return}await brSave(i,lat,lng,rad);brSay('✅ '+BR[i].name+' approved with the coordinates you typed.','ok');brRender()}
    if(a==='add'){const n=v('br-n'),ad=v('br-a'),r=+v('br-r2')||150;if(!n||!ad){brSay('Branch name and address are required.','err');return}await brFetch('branches','POST',{name:n,address:ad,radius_m:r});await brLoad();brSay('Branch added — now capture its GPS while you are there.','ok');brRender()}}
-  catch(err){const m=err&&err.code===1?'Location permission was blocked. Allow Location for this site in the browser settings, then try again.':err&&err.code===3?'GPS timed out. Go outdoors and try again.':(err&&err.message)||'Could not save.';brSay('❌ '+m,'err')}}}
+  catch(err){const m=err&&err.code===1?'Location permission was blocked. Allow Location for this site in the browser settings, then try again.':err&&err.code===3?'GPS timed out. Go outdoors and try again.':(/permission denied for function|authorize/i.test((err&&err.message)||'')?'Database permission problem (not your phone): the database function "authorize" has no EXECUTE permission for this role. Run the short SQL fix in the Supabase SQL Editor, then tap Capture GPS again.':((err&&err.message)||'Could not save.'));brSay('❌ '+m,'err')}}}
 const origBranch=window.sclOpenBranchAdmin;
 window.sclOpenBranchAdmin=async function(){try{if(origBranch)await origBranch.apply(this,arguments)}catch(_){}
  const box=$('sclBranchAdminBody');if(!box){fb('Branch screen is not available.','err');return}box.innerHTML='<div class="scl300-note" data-scl-keep style="color:#14061f">Loading branches…</div>';
@@ -10345,14 +10473,14 @@ html body :is(.btn,.scl-btn,.hv2-btn)[data-scl-ic]::before{vertical-align:-.1em;
     var coin=D.createElement('span');coin.className='sclcc-coin';
     var front=D.createElement('span');front.className='sclcc-face sclcc-front';
     if(img)front.appendChild(img);               /* move (not copy) the existing MultiPu image */
-    var back=D.createElement('span');back.className='sclcc-face sclcc-back';back.innerHTML='<b>EI</b><small>AI</small>';
+    var back=D.createElement('span');back.className='sclcc-face sclcc-back';back.innerHTML=window.SCL_AURA_IMG?'<img alt="Aura" src="'+window.SCL_AURA_IMG+'">':'<b>Aura</b>';
     coin.appendChild(front);coin.appendChild(back);
     while(m.firstChild)m.removeChild(m.firstChild);
     m.appendChild(coin);
     m.setAttribute('data-sclcc','1');
-    m.setAttribute('aria-label','Educational Intelligence AI by MultiPu. Tap to ask a question.');
-    m.title='Educational Intelligence AI (MultiPu)';
-    m.onclick=function(e){if(e&&e.preventDefault)e.preventDefault();openEI()};
+    m.setAttribute('aria-label','Aura, the school assistant by MultiPu. Tap to ask anything.');
+    m.title='Aura (MultiPu)';
+    m.onclick=function(e){if(e&&e.preventDefault)e.preventDefault();if(typeof window.sclOpenAura==='function')window.sclOpenAura();else openEI()};
     return true
   }
   var raf=0;
@@ -10367,4 +10495,91 @@ html body :is(.btn,.scl-btn,.hv2-btn)[data-scl-ic]::before{vertical-align:-.1em;
   if(D.readyState==='loading')D.addEventListener('DOMContentLoaded',start,{once:true});else start()
 })();
 </script>
+
+<style id="scl-v95-refine">
+/* Aura now lives on the back of the MultiPu coin; its old floating button is gone and the spot is clear */
+html body #auraFab{display:none!important}
+html body #sclMultiLogo .sclcc-back{padding:0;background:#0b1426}
+html body #sclMultiLogo .sclcc-back img{width:100%;height:100%;object-fit:cover;object-position:50% 22%;display:block;border-radius:50%}
+/* home page background: slightly darker (night mode keeps its own colours) */
+:root{--h-cream:#efdcb6;--h-paper:#f5e6c8;--h-line:#dcc291}
+html body .hv2-top{background:rgba(239,220,182,.9)}
+body.scl-night .hv2-top{background:rgba(20,7,11,.86)}
+/* every home-page icon centred in its button/space; the written text keeps its current alignment */
+html body .hv2 :is(.hv2-tile,.hv2-btn,.hv2-steps button,.hv2-contact button,.hv2-top .hv2-brand)[data-scl-ic]::before,
+html body .scl-v33-tools .scl-v33-tool[data-scl-ic]::before{display:block!important;width:100%;margin:0 0 4px 0!important;text-align:center!important;line-height:1.1}
+html body .hv2 :is(.hv2-btn,.hv2-steps button,.hv2-contact button)[data-scl-ic]{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+html body .hv2 .hv2-tile[data-scl-ic]{align-items:flex-start}
+html body .hv2 .hv2-tile[data-scl-ic]::before{align-self:center}
+html body .hv2-nav>a[data-scl-ic]::before,html body .hv2-nav>button[data-scl-ic]::before{width:100%;text-align:center}
+html body .scl-v33-tool .tool-icon{display:block;width:100%;text-align:center}
+html body .scl-v33-tool{display:flex;flex-direction:column;align-items:center;justify-content:center}
+html body .scl-v33-tool[data-scl-ic]{text-align:center}
+.scl-pend-card{margin:12px 0;padding:12px;border-radius:12px;background:#fff6d6;border:1px solid #e2c98f;color:#3b2a00;font:13px/1.45 Arial,sans-serif}
+.scl-pend-card h4{margin:0 0 6px;color:#7a4b00}
+.scl-pend-card table{width:100%;border-collapse:collapse;font-size:12px}
+.scl-pend-card td,.scl-pend-card th{padding:5px 6px;border-bottom:1px solid #ecd9a0;text-align:left;vertical-align:top}
+</style>
+<script id="scl-v95-pending-attendance">
+(function(){'use strict';
+ if(window.sclPendAtt)return;
+ var KEY='sclPendingAttendance',TZ='Africa/Lagos',busy=false;
+ function rd(){try{var a=JSON.parse(localStorage.getItem(KEY)||'[]');return Array.isArray(a)?a:[]}catch(_){return[]}}
+ function wr(a){try{localStorage.setItem(KEY,JSON.stringify(a.slice(-60)))}catch(_){}}
+ function tok(){try{return(JSON.parse(sessionStorage.getItem('sclAuthSession')||'null')||{}).accessToken||''}catch(_){return''}}
+ function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(m){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]})}
+ function notify(title,msg){
+  try{if('Notification' in window){if(Notification.permission==='granted')new Notification(title,{body:msg,tag:'scl-att-pending'});else if(Notification.permission==='default')Notification.requestPermission()}}catch(_){}
+  try{if(typeof window.toast==='function')window.toast(msg)}catch(_){}
+ }
+ async function sync(){
+  if(busy)return;var t=tok();if(!t)return;var a=rd();if(!a.length)return;busy=true;
+  try{
+   var keep=[];
+   for(var i=0;i<a.length;i++){var it=a[i];
+    if((it.tries||0)>=20||(it.last&&Date.now()-it.last<120000)){keep.push(it);continue}
+    try{
+     var r=await fetch(it.endpoint,{method:'POST',headers:{apikey:window.SCL_SUPABASE_PUBLISHABLE_KEY,Authorization:'Bearer '+t,'Content-Type':'application/json'},body:JSON.stringify(it.payload)});
+     if(r.ok){notify('SCL Attendance','Your pending attendance was synced to the school record.');continue}
+     var d={};try{d=await r.json()}catch(_){}
+     it.tries=(it.tries||0)+1;it.last=Date.now();it.serverNote=d.error||('Server said '+r.status);keep.push(it)
+    }catch(_){it.last=Date.now();keep.push(it)}
+   }
+   wr(keep)
+  }finally{busy=false}
+ }
+ function paint(){
+  var body=document.getElementById('sclAttendanceBody');if(!body)return;
+  var card=body.querySelector('.scl-pend-card'),a=rd();
+  if(!a.length){if(card)card.remove();return}
+  var html='<h4>⏳ Attendance with GPS pending ('+a.length+')</h4><table><tr><th>When</th><th>Type</th><th>Branch</th><th>Status</th></tr>'+a.slice().reverse().map(function(x){var w='';try{w=new Date(x.at).toLocaleString('en-NG',{timeZone:TZ,hour12:true,day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})}catch(_){}return'<tr><td>'+esc(w)+'</td><td>'+esc(x.action==='out'?'Sign out':'Sign in')+'</td><td>'+esc(x.branch||'')+'</td><td>PENDING GPS<br><small>'+esc(x.reason||'')+'</small></td></tr>'}).join('')+'</table><small>These count as attendance and wait for GPS verification / school sync.</small>';
+  if(!card){card=document.createElement('div');card.className='scl-pend-card';card.setAttribute('data-scl-keep','');body.appendChild(card)}
+  if(card.getAttribute('data-n')!==String(a.length)+':'+(a[a.length-1].id||'')){card.innerHTML=html;card.setAttribute('data-n',String(a.length)+':'+(a[a.length-1].id||''))}
+ }
+ function alertAdmin(i){
+  try{
+   var d=new Date().toLocaleDateString('en-CA',{timeZone:TZ}),k='sclPendAdm:'+d+':'+i.action+':'+(i.username||'');
+   if(sessionStorage.getItem(k))return;sessionStorage.setItem(k,'1');
+   if(typeof window.sclNotifyBatch!=='function')return;
+   var cfg=(typeof SCL_WORKER_CONFIG!=='undefined'&&SCL_WORKER_CONFIG)||{},mail=cfg.schoolEmail||'',ph=(cfg.management&&cfg.management[0])||'';
+   if(!mail&&!ph)return;
+   var when=new Date().toLocaleString('en-NG',{timeZone:TZ,hour12:true,day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+   var txt='SCL attendance PENDING (GPS not verified): '+(i.username||'a staff member')+' '+(i.action==='out'?'signed OUT':'signed IN')+(i.period?' ('+i.period+')':'')+(i.branch?' at '+i.branch:'')+' on '+when+'. Reason: '+(i.reason||'GPS not verified')+(i.dist!=null?' Distance from branch: '+Math.round(i.dist)+' m.':'')+(i.where==='device'?' Record is held on the staff phone until it syncs.':'')+' The attendance counts; please review and verify.';
+   window.sclNotifyBatch([{email:mail,phone:ph,subject:'Attendance pending GPS: '+(i.username||'staff'),text:txt}],{kind:'attendance-pending',summary:'Attendance pending GPS - '+(i.username||'staff')}).catch(function(){});
+  }catch(_){}
+ }
+ window.sclPendAtt={alertAdmin:alertAdmin,add:function(rec){var a=rd();rec.id='p'+Date.now().toString(36);rec.at=new Date().toISOString();rec.tries=0;a.push(rec);wr(a);return rec},list:rd,notify:notify,sync:sync};
+ setInterval(paint,1500);setInterval(sync,60000);window.addEventListener('online',sync);setTimeout(sync,4000);
+})();
+</script>
+
+<style id="scl-v96-student-att">
+.scl-at2{display:flex;gap:6px;flex-wrap:nowrap}
+.scl-at2 button{flex:1 1 0;min-width:74px;border:2px solid #cfc6d6;background:#fff;color:#5b5163;border-radius:10px;padding:8px 6px;font:800 12px/1 Arial,sans-serif;cursor:pointer;transition:background .15s,color .15s,border-color .15s}
+.scl-at2 button.p.on{background:#1faa59;border-color:#1faa59;color:#fff}
+.scl-at2 button.p.on.late{background:#f59e0b;border-color:#f59e0b;color:#fff}
+.scl-at2 button.a.on{background:#d62839;border-color:#d62839;color:#fff}
+.scl-at2 button.p:not(.on){border-color:#1faa59;color:#17803f}
+.scl-at2 button.a:not(.on){border-color:#d62839;color:#b01e2d}
+</style>
 </body></html>
