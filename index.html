@@ -10701,4 +10701,91 @@ var tries=0,iv=setInterval(function(){init();if(document.querySelector('.hv2-gro
 })();
 </script>
 
+<!-- SCL v100: Neon-Glass icon system + confidential staff-only student attendance -->
+<style id="scl-neon-glass-v100">
+:root{--ng-plum:#1a0a1f;--ng-wine:#4a0f2a;--ng-gold:#d9b25f;--ng-gold2:#f3dca0;--ng-vio:#6b3fa0;--ng-glass:rgba(255,255,255,.06)}
+html,body{background:radial-gradient(900px 600px at 15% -5%,rgba(122,24,70,.55),transparent 60%),radial-gradient(800px 700px at 100% 30%,rgba(107,63,160,.35),transparent 60%),linear-gradient(170deg,#1a0a1f,#2a0b1c 55%,#12060f)!important;background-attachment:fixed!important;color:#f3e8d2!important}
+body::before{opacity:.25!important;background-image:radial-gradient(rgba(217,178,95,.35) 1px,transparent 1.4px)!important}
+h1,h2,h3,.hv2 h1,.hv2 h2,.hv2 h3{font-family:Georgia,'Times New Roman',serif!important;color:var(--ng-gold2)!important;letter-spacing:.02em}
+.hv2-tile,.scl-home-action-clean>button,.stat,.stats>div,.hv2-grp,.card,.hv2-sec .hv2-in>div[class*=hv2-]{background:linear-gradient(145deg,rgba(255,255,255,.09),rgba(255,255,255,.03))!important;border:1px solid rgba(217,178,95,.38)!important;border-radius:18px!important;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);box-shadow:0 10px 28px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.14),0 0 18px rgba(217,178,95,.08)!important;color:#f3e8d2!important;transition:transform .18s,box-shadow .18s,border-color .18s}
+.hv2-tile:hover,.scl-home-action-clean>button:hover{transform:translateY(-3px);border-color:var(--ng-gold)!important;box-shadow:0 16px 34px rgba(0,0,0,.55),0 0 26px rgba(217,178,95,.28)!important}
+.hv2-tile b,.scl-home-action-clean>button b{color:var(--ng-gold2)!important;font-size:12px;letter-spacing:.08em;text-transform:uppercase}
+.hv2-tile small,.scl-home-action-clean>button small{color:#cdb9d8!important}
+.hv2-tile{position:relative;padding-top:64px!important;text-align:center}
+.hv2-tile .ng-ico,.scl-home-action-clean>button .icon{position:absolute;top:10px;left:50%;transform:translateX(-50%);width:46px;height:46px;border-radius:14px;display:grid;place-items:center;background:linear-gradient(145deg,#3a1450,#1a0a1f);border:1px solid var(--ng-gold);box-shadow:0 0 14px rgba(217,178,95,.35),inset 0 0 10px rgba(107,63,160,.5)}
+.ng-ico svg{width:26px;height:26px;stroke:var(--ng-gold2);fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 3px rgba(217,178,95,.6))}
+button,.btn,.hv2-btn{border-radius:14px!important}
+.hv2-btn.p,.btn.red,button.red{background:linear-gradient(135deg,#d9b25f,#f3dca0 55%,#b98a2e)!important;color:#2a0b1c!important;border:1px solid #fff3c9!important;font-weight:800;box-shadow:0 8px 20px rgba(217,178,95,.35)!important}
+.hv2-btn.s,.btn.gold{background:linear-gradient(145deg,#3a1450,#1a0a1f)!important;color:var(--ng-gold2)!important;border:1px solid var(--ng-gold)!important}
+.modal .card{background:linear-gradient(160deg,#2a0f3a,#1a0a1f)!important;color:#f3e8d2!important}
+.modal .card input,.modal .card select,.modal .card textarea{background:rgba(255,255,255,.08)!important;color:#fff!important;border:1px solid rgba(217,178,95,.5)!important;border-radius:12px!important}
+.modal .card table th{background:#3a1450!important;color:var(--ng-gold2)!important}.modal .card td{color:#f3e8d2!important}
+.hv2-stat b,.stat b,.stats b{font-family:Georgia,serif!important;color:#fff3c9!important;text-shadow:0 0 14px rgba(217,178,95,.5)}
+.ng-conf{display:inline-block;margin:0 0 10px;padding:5px 12px;border-radius:999px;background:linear-gradient(90deg,#7a0010,#b3001b);color:#fff3c9;border:1px solid var(--ng-gold);font-weight:800;font-size:11px;letter-spacing:.14em;animation:ngPulse 2.4s infinite}
+.ng-conf-bar{padding:10px 14px;margin-bottom:12px;border-radius:14px;border:1px dashed var(--ng-gold);background:rgba(122,0,16,.35);color:#fff3c9;font-size:13px}
+.hv2-tile[data-a=satt]::after{content:"CONFIDENTIAL";position:absolute;top:8px;right:8px;font-size:8.5px;font-weight:800;letter-spacing:.1em;padding:2px 7px;border-radius:999px;background:#7a0010;color:#fff3c9;border:1px solid var(--ng-gold)}
+@keyframes ngPulse{0%,100%{box-shadow:0 0 0 0 rgba(217,178,95,.5)}50%{box-shadow:0 0 0 7px rgba(217,178,95,0)}}
+</style>
+<script id="scl-neon-glass-v100-js">
+(function(){
+ /* ---- gold line icon set (one per tile action) ---- */
+ var P={reg:'<path d="M6 3h9l3 3v15H6z"/><path d="M9 9h6M9 13h6M9 17h3"/>',fees:'<rect x="3" y="7" width="18" height="12" rx="2"/><path d="M3 11h18M7 15h3"/>',results:'<circle cx="12" cy="9" r="5"/><path d="M9 13l-2 8 5-3 5 3-2-8"/>',cur:'<path d="M4 5h7a2 2 0 012 2v13a2 2 0 00-2-2H4zM20 5h-7"/><path d="M20 5v13h-7"/>',tt:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M8 14h2M13 14h3"/>',mat:'<path d="M4 20V6l8-3 8 3v14M4 20h16M9 20v-6h6v6"/>',staff:'<circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.5 2.7-6 6-6s6 2.5 6 6M16 6h5M16 10h5"/>',att:'<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16l2 2 4-4"/>',satt:'<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M9 11a3 3 0 106 0 3 3 0 10-6 0M8 18c.6-2 2.2-3 4-3s3.4 1 4 3"/>',prof:'<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/>',lead:'<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/>',collab:'<circle cx="8" cy="9" r="3"/><circle cx="17" cy="10" r="2.5"/><path d="M2 20c0-3 2.7-5 6-5s6 2 6 5M15 15c3 0 6 1.5 6 5"/>',uni:'<path d="M8 3l-5 4 3 3 2-1v12h8V9l2 1 3-3-5-4a4 4 0 01-8 0z"/>',gallery:'<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M3 18l6-5 4 3 3-2 5 4"/>'};
+ var DEF='<circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/>';
+ function icons(){document.querySelectorAll('.hv2-tile[data-a]').forEach(function(t){if(t.querySelector('.ng-ico'))return;var s=document.createElement('span');s.className='ng-ico';s.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true">'+(P[t.dataset.a]||DEF)+'</svg>';t.insertBefore(s,t.firstChild)})}
+ setInterval(icons,1500);icons();
+
+ /* ---- role check: staff + admin ONLY (not students, not parents, not visitors) ---- */
+ function roles(){try{var a=JSON.parse(sessionStorage.getItem('sclAuthSession')||'null');if(!a)return[];var r=[].concat(a.roles||[],(a.user&&a.user.app_metadata&&a.user.app_metadata.roles)||[],(a.user&&a.user.user_metadata&&a.user.user_metadata.role)||[]);return r.map(function(x){return String(x).toLowerCase()})}catch(e){return[]}}
+ window.sclCanSeeStudentAttendance=function(){var r=roles();return r.some(function(x){return !/^(parent|guardian|student|visitor|guest|pupil)$/.test(x)})};
+ function deny(){var m=window.toast||window.fb;var msg='🔒 Confidential. Student attendance is for school staff and admin only.';try{m?m(msg,'err',4500):alert(msg)}catch(e){alert(msg)}}
+ var tries=0,t=setInterval(function(){
+  if(typeof window.openStudentAttendance==='function'&&typeof window.renderStudentAttendance==='function'){
+   clearInterval(t);
+   var open0=window.openStudentAttendance,render0=window.renderStudentAttendance;
+   window.openStudentAttendance=function(){if(!window.sclCanSeeStudentAttendance()){deny();return}return open0.apply(this,arguments)};
+   window.renderStudentAttendance=function(){
+    if(!window.sclCanSeeStudentAttendance()){var b=document.getElementById('sclSuiteBody');if(b)b.innerHTML='<div class="ng-conf-bar">🔒 CONFIDENTIAL — staff and admin only.</div>';return}
+    render0.apply(this,arguments);
+    var b=document.getElementById('sclSuiteBody');
+    if(b&&!b.querySelector('.ng-conf'))b.insertAdjacentHTML('afterbegin','<div style="color:#fff"><span class="ng-conf">🔒 CONFIDENTIAL</span><div class="ng-conf-bar">Visible to staff and admin only. Not visible to students or parents. Parents receive a notification only when their own child is marked present at school.</div></div>')};
+   /* the generic suite tab must not bypass the gate */
+   var tab0=window.sclSuiteTab;window.sclSuiteTab=function(x){if(x==='attendance'&&!window.sclCanSeeStudentAttendance()){deny();return}return tab0.apply(this,arguments)};
+  }else if(++tries>80)clearInterval(t)},500);
+ /* hide the homepage tile from non-staff, show it to staff/admin */
+ setInterval(function(){var ok=window.sclCanSeeStudentAttendance();document.querySelectorAll('[data-a="satt"],[onclick*="openStudentAttendance"]').forEach(function(e){e.style.display=ok?'':'none'})},1500);
+})();
+</script>
+<!-- SCL v101: neon-glass icons for every remaining button, stat, nav, footer, modal -->
+<style id="scl-neon-glass-v101">
+.ng-i{display:inline-grid;place-items:center;width:30px;height:30px;margin-right:8px;vertical-align:middle;flex:none;border-radius:10px;background:linear-gradient(145deg,#3a1450,#1a0a1f);border:1px solid #d9b25f;box-shadow:0 0 10px rgba(217,178,95,.35),inset 0 0 8px rgba(107,63,160,.5)}
+.ng-i svg{width:18px;height:18px;stroke:#f3dca0;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 3px rgba(217,178,95,.6))}
+.scl-shortcut-item,.scl-suite-btn,.scl-v33-tool,.scl-suite-tabs button,.scl-profile-toolbar button,.hv2-nav a,.hv2-nav button,.scl-footer button,.modal .mh button,#sclHubMenu button,.scl300-chips button{background:linear-gradient(145deg,rgba(255,255,255,.09),rgba(255,255,255,.03))!important;color:#f3e8d2!important;border:1px solid rgba(217,178,95,.4)!important;border-radius:14px!important;box-shadow:0 6px 16px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.12)!important;backdrop-filter:blur(8px)}
+.scl-shortcut-item small,.scl-v33-tool .tool-sub{color:#cdb9d8!important}
+.scl-suite-tabs button.active,.hv2-nav .on,.scl300-chips button.on{background:linear-gradient(135deg,#d9b25f,#f3dca0)!important;color:#2a0b1c!important;box-shadow:0 0 18px rgba(217,178,95,.5)!important}
+.modal .mh button{width:36px;height:36px;padding:0!important;font-weight:800;color:#f3dca0!important}
+.modal .mh{border-bottom:1px solid rgba(217,178,95,.35)}
+.hv2-top,.scl-footer,nav{background:rgba(26,10,31,.92)!important;border-color:rgba(217,178,95,.35)!important;backdrop-filter:blur(12px)}
+#schoolStats .stat,.hv2-statwrap .stat{padding-top:50px!important;position:relative}
+#schoolStats .stat::before,.hv2-statwrap .stat::before{content:"";position:absolute;top:9px;left:50%;transform:translateX(-50%);width:34px;height:34px;border-radius:12px;border:1px solid #d9b25f;background:linear-gradient(145deg,#3a1450,#1a0a1f) center/20px no-repeat;box-shadow:0 0 12px rgba(217,178,95,.4)}
+.scl-footer button{margin:3px}
+.scl-status-ok,.scl-v39-status-badge{border-radius:999px!important;border:1px solid #d9b25f!important;background:#3a1450!important;color:#f3dca0!important}
+</style>
+<script id="scl-neon-glass-v101-js">
+(function(){
+ var G={'📋':'<rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4h6v3H9zM8 12h8M8 16h5"/>','🟢':'<circle cx="12" cy="12" r="8"/><path d="M8.5 12.5l2.5 2.5 4.5-5"/>','✅':'<circle cx="12" cy="12" r="8"/><path d="M8.5 12.5l2.5 2.5 4.5-5"/>','📍':'<path d="M12 21s6-5.5 6-10a6 6 0 10-12 0c0 4.5 6 10 6 10z"/><circle cx="12" cy="11" r="2"/>','💼':'<rect x="3" y="8" width="18" height="12" rx="2"/><path d="M9 8V5h6v3M3 13h18"/>','🏅':'<circle cx="12" cy="9" r="5"/><path d="M9 13l-2 8 5-3 5 3-2-8"/>','🥇':'<circle cx="12" cy="9" r="5"/><path d="M9 13l-2 8 5-3 5 3-2-8"/>','🔎':'<circle cx="11" cy="11" r="6"/><path d="M16 16l5 5"/>','🛠️':'<path d="M14 6a4 4 0 005 5l-9 9-3-3 9-9a4 4 0 01-2-2z"/>','👩‍🏫':'<circle cx="12" cy="8" r="3.5"/><path d="M5 21c0-4 3-6.5 7-6.5s7 2.5 7 6.5M3 4h18"/>','🧒':'<circle cx="12" cy="8" r="3.5"/><path d="M5 21c0-4 3-6.5 7-6.5s7 2.5 7 6.5"/>','🪪':'<rect x="3" y="6" width="18" height="12" rx="2"/><circle cx="9" cy="12" r="2"/><path d="M14 10h4M14 14h4"/>','🎵':'<path d="M9 18V5l11-2v13"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="17.5" cy="16" r="2.5"/>','📊':'<path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/>','🔒':'<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/>','📢':'<path d="M4 10v4h3l8 5V5L7 10zM18 9a4 4 0 010 6"/>','📅':'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>','💬':'<path d="M4 5h16v11H9l-5 4z"/>','📝':'<path d="M6 3h9l3 3v15H6zM9 11h6M9 15h4"/>','🎓':'<path d="M2 9l10-5 10 5-10 5zM6 11v5c3 3 9 3 12 0v-5"/>','⭐':'<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/>','💳':'<rect x="3" y="6" width="18" height="12" rx="2"/><path d="M3 10h18"/>','🏫':'<path d="M3 20h18M5 20V9l7-5 7 5v11M10 20v-5h4v5"/>','📚':'<path d="M4 5h7a2 2 0 012 2v13a2 2 0 00-2-2H4zM20 5h-7v15"/>','👨‍👩‍👧':'<circle cx="8" cy="8" r="3"/><circle cx="17" cy="10" r="2.5"/><path d="M2 20c0-3 2.7-5 6-5s6 2 6 5M15 15c3 0 6 1.5 6 5"/>'};
+ var STAT={'student':'<circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 20c0-3.5 2.7-6 6-6s6 2.5 6 6"/>','year':'<path d="M12 3c3 3 3 6 0 8-3-2-3-5 0-8zM12 11v10M7 21h10"/>','teach':'<path d="M4 6h16v10H4zM2 20h20M8 10h8"/>','award':'<path d="M7 4h10v5a5 5 0 01-10 0zM7 6H4v2a3 3 0 003 3M17 6h3v2a3 3 0 01-3 3M12 14v4M8 21h8"/>'};
+ var re=new RegExp('^\\s*('+Object.keys(G).map(function(k){return k.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}).join('|')+')\\uFE0F?\\s*');
+ var SEL='.scl-shortcut-item,.scl-suite-btn,.scl-v33-tool,.scl-suite-tabs button,.scl-profile-toolbar button,#sclHubMenu button,.scl300-chips button,.scl-role-actions button,.modal h3,.modal button.btn,.scl-att-actions button,.scl-suite-all-tools button,.scl-home-action-clean>button b';
+ function walk(){document.querySelectorAll(SEL).forEach(function(el){if(el.dataset.ngd)return;var n=el.firstChild;while(n&&!(n.nodeType===3&&n.nodeValue.trim()))n=n.nextSibling;
+  if(!n)return;var m=n.nodeValue.match(re);el.dataset.ngd=1;if(!m)return;n.nodeValue=n.nodeValue.slice(m[0].length);
+  var s=document.createElement('span');s.className='ng-i';s.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true">'+G[m[1]]+'</svg>';el.insertBefore(s,el.firstChild)})}
+ function stats(){document.querySelectorAll('#schoolStats .stat').forEach(function(s){if(s.dataset.ngs)return;var t=(s.textContent||'').toLowerCase(),k=/student|pupil/.test(t)?'student':/year/.test(t)?'year':/teacher|staff/.test(t)?'teach':/award|prize/.test(t)?'award':'';if(!k)return;s.dataset.ngs=1;
+  var svg="<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='#f3dca0' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'>"+STAT[k]+"</svg>";
+  s.style.setProperty('--ng-stat','url("data:image/svg+xml;utf8,'+encodeURIComponent(svg)+'")')})}
+ var st=document.createElement('style');st.textContent='#schoolStats .stat::before{background-image:var(--ng-stat,none),linear-gradient(145deg,#3a1450,#1a0a1f)!important;background-size:20px,cover!important;background-position:center!important;background-repeat:no-repeat!important}';document.head.appendChild(st);
+ setInterval(function(){try{walk();stats()}catch(e){}},1200);walk();stats();
+ /* keyboard + accessibility for glass tiles */
+ document.addEventListener('keydown',function(e){if((e.key==='Enter'||e.key===' ')&&e.target.matches&&e.target.matches('.hv2-tile')){e.preventDefault();e.target.click()}});
+})();
+</script>
 </body></html>
