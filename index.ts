@@ -1,42 +1,27 @@
-// Supabase Edge Function: scl-notify  — sends parent/staff emails (Resend) and SMS (Termii).
-// Deploy:  supabase functions deploy scl-notify
-// Secrets: supabase secrets set RESEND_API_KEY=... TERMII_API_KEY=... TERMII_SENDER_ID=SCLSchool \
-//          SCL_MAIL_FROM="Shining Child Leaders School <notices@YOURDOMAIN>" SCL_SCHOOL_EMAIL=shiningchildleader@gmail.com
-// (Resend needs a verified sending domain; without TERMII_API_KEY only emails are sent.)
-// The website calls this automatically after attendance, CBT results and assignment posts/grades.
-const cors = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type" };
-const phone = (p: string) => String(p || "").replace(/\D/g, "").replace(/^0/, "234");
-const esc = (s: string) => String(s).replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c] as string));
-
+// Deploy: supabase functions deploy scl-student-attendance-notify
+// Writes a parent notice ONLY for students marked Present (P) or Late (L). Absence details are never pushed to anyone else.
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+const cors = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "authorization, apikey, content-type" };
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
-  try {
-    const { messages = [], summary = "", school_email } = await req.json();
-    const RESEND = Deno.env.get("RESEND_API_KEY"), TERMII = Deno.env.get("TERMII_API_KEY");
-    const FROM = Deno.env.get("SCL_MAIL_FROM") || "Shining Child Leaders School <onboarding@resend.dev>";
-    const SCHOOL = Deno.env.get("SCL_SCHOOL_EMAIL") || school_email || "shiningchildleader@gmail.com";
-    const SENDER = Deno.env.get("TERMII_SENDER_ID") || "SCLSchool";
-    let email = 0, sms = 0, failed = 0;
-    const sendMail = async (to: string, subject: string, text: string) => {
-      if (!RESEND) { failed++; return; }
-      const r = await fetch("https://api.resend.com/emails", { method: "POST",
-        headers: { Authorization: `Bearer ${RESEND}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ from: FROM, to: [to], subject, html: `<p>${esc(text).replace(/\n/g, "<br>")}</p>` }) });
-      r.ok ? email++ : failed++;
-    };
-    for (const m of messages.slice(0, 300)) {
-      if (m.email) await sendMail(m.email, m.subject || "School notice", m.text || "");
-      if (m.phone && TERMII) {
-        const r = await fetch("https://api.ng.termii.com/api/sms/send", { method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ to: phone(m.phone), from: SENDER, sms: m.text, type: "plain", channel: "generic", api_key: TERMII }) });
-        r.ok ? sms++ : failed++;
-      }
+  const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+  const user = await createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!, { global: { headers: { Authorization: req.headers.get("Authorization") ?? "" } } }).auth.getUser();
+  const roles: string[] = user.data.user?.app_metadata?.roles ?? [];
+  if (!roles.some(r => ["teacher","staff","developer","technical_admin","management_admin","affairs_admin"].includes(r))) return new Response("forbidden", { status: 403, headers: cors });
+  const { keys } = await req.json();
+  const { data: recs } = await sb.from("student_attendance").select("*").in("att_key", keys ?? []);
+  let made = 0;
+  for (const r of recs ?? []) {
+    const ids = Object.keys(r.marks).filter(k => k !== "__k" && ["P","L"].includes(r.marks[k]));
+    // ADAPT column names to your students table:
+    const { data: kids } = await sb.from("students").select("id, full_name, parent_email").in("id", ids);
+    for (const k of kids ?? []) {
+      if (!k.parent_email) continue;
+      const st = r.marks[k.id] === "L" ? "late" : "present";
+      const { error } = await sb.from("student_attendance_notices").upsert({ att_key: r.att_key, student_id: String(k.id), parent_email: k.parent_email, att_date: r.att_date, status: st, message: `${k.full_name} arrived at school (${st}) on ${r.att_date}.` }, { onConflict: "att_key,student_id", ignoreDuplicates: true });
+      if (!error) made++;
     }
-    // one summary copy to the school email, which has full access
-    await sendMail(SCHOOL, "[Copy] " + (summary || messages.length + " notice(s)"), (summary ? summary + "\n\n" : "") + messages.map((m: any) => `${m.email || m.phone}: ${m.text}`).join("\n"));
-    const ok = RESEND ? failed < Math.max(1, messages.length) : false;
-    return new Response(JSON.stringify({ ok, sent: { email, sms }, failed }), { headers: { ...cors, "Content-Type": "application/json" }, status: ok ? 200 : 500 });
-  } catch (e) {
-    return new Response(JSON.stringify({ ok: false, error: String(e) }), { headers: { ...cors, "Content-Type": "application/json" }, status: 500 });
   }
+  // Delivery hook: connect your email/SMS/push provider here and set sent_at after sending.
+  return new Response(JSON.stringify({ notices: made }), { headers: { ...cors, "Content-Type": "application/json" } });
 });

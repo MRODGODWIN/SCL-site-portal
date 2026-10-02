@@ -10788,4 +10788,81 @@ button,.btn,.hv2-btn{border-radius:14px!important}
  document.addEventListener('keydown',function(e){if((e.key==='Enter'||e.key===' ')&&e.target.matches&&e.target.matches('.hv2-tile')){e.preventDefault();e.target.click()}});
 })();
 </script>
+<!-- SCL v102: register table first + dark-glass attendance screen + cloud sync -->
+<style id="scl-neon-glass-v102">
+#sclSuiteBody>div,#sclSuiteBody [style*="14061f"]{color:#f3e8d2!important}
+.scl300-note,.scl300-stats>div,.scl300-row3>div,.scl300-row>div{color:#f3e8d2!important}
+.scl300-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.scl300-stats>div,.scl300-note{background:linear-gradient(145deg,rgba(255,255,255,.09),rgba(255,255,255,.03))!important;border:1px solid rgba(217,178,95,.4)!important;border-radius:14px!important;padding:10px;text-align:center}
+.scl300-stats b{display:block;font:700 22px Georgia,serif;color:#fff3c9;text-shadow:0 0 12px rgba(217,178,95,.5)}
+.scl300-tbl,.ng-reg-tbl{width:100%;border-collapse:separate;border-spacing:0;font-size:12.5px}
+.scl300-tbl th,.ng-reg-tbl th{background:#3a1450!important;color:#f3dca0!important;padding:8px;text-align:left;position:sticky;top:0;white-space:nowrap}
+.scl300-tbl td,.ng-reg-tbl td{padding:8px;border-bottom:1px solid rgba(217,178,95,.18);color:#f3e8d2!important}
+.scl300-cta{background:linear-gradient(145deg,#3a1450,#1a0a1f)!important;color:#f3dca0!important;border:1px solid #d9b25f!important;border-radius:14px!important;padding:10px 14px;font-weight:700;margin:6px 6px 0 0}
+.scl300-cta.alt{background:linear-gradient(135deg,#d9b25f,#f3dca0)!important;color:#2a0b1c!important}
+.scl300 label,.scl300-row label,.scl300-row3 label{color:#f3dca0!important}
+#ngAttReg{margin:0 0 16px;padding:12px;border-radius:18px;border:1px solid rgba(217,178,95,.5);background:rgba(26,10,31,.7);box-shadow:0 0 24px rgba(217,178,95,.12)}
+#ngAttReg h4{margin:0 0 8px;font:700 17px Georgia,serif;color:#f3dca0}
+.ng-reg-bar{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0}
+.ng-reg-bar label{font-size:11px;font-weight:700;color:#f3dca0}
+.ng-reg-bar input,.ng-reg-bar select{width:100%;box-sizing:border-box;padding:9px;margin-top:3px}
+.ng-reg-wrap{overflow:auto;max-height:46vh;border:1px solid rgba(217,178,95,.3);border-radius:12px}
+.ng-reg-tbl tr.ng-row{cursor:pointer}.ng-reg-tbl tr.ng-row:hover td{background:rgba(217,178,95,.1)}
+.ng-pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:11px;font-weight:800;border:1px solid #d9b25f}
+.ng-pill.ok{background:#14532d;color:#d1fae5}.ng-pill.no{background:#7a0010;color:#fff3c9}
+.ng-chip{display:inline-block;margin:2px;padding:2px 8px;border-radius:8px;font-size:11px;background:#2a0f3a;border:1px solid rgba(217,178,95,.4)}
+.ng-chip.A{background:#7a0010}.ng-chip.L{background:#7a5200}.ng-chip.P{background:#14532d}
+.ng-cloud{font-size:11px;color:#cdb9d8;margin-top:6px}
+</style>
+<script id="scl-neon-glass-v102-js">
+(function(){
+ var CL=['Daycare','Nursery 1','Nursery 2','Reception','Primary 1','Primary 2','Primary 3','Primary 4','Primary 5','JSS 1','JSS 2','JSS 3','SSS 1','SSS 2','SSS 3'];
+ var U=window.SCL_SUPABASE_URL,K=window.SCL_SUPABASE_PUBLISHABLE_KEY;
+ var S={date:new Date().toLocaleDateString('en-CA',{timeZone:'Africa/Lagos'}),cls:'',open:null,srv:{},cloud:'Checking server…'};
+ function LS(k,d){try{return JSON.parse(localStorage.getItem(k)||'null')||d}catch(e){return d}}
+ function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+ function tok(){try{return(JSON.parse(sessionStorage.getItem('sclAuthSession')||'null')||{}).accessToken||''}catch(e){return''}}
+ function hdr(x){return Object.assign({apikey:K,Authorization:'Bearer '+(tok()||K),'Content-Type':'application/json'},x||{})}
+ function recs(){var a=LS('sclStuAtt',{}),o=[];Object.keys(a).forEach(function(k){var r=a[k];if(r&&r.date===S.date)o.push(Object.assign({key:k},r))});(S.srv[S.date]||[]).forEach(function(r){if(!o.some(function(x){return x.key===r.key}))o.push(r)});return o}
+ function pl(p){return(p==null||p==='0'||p==='')?'Full day':'Period '+p}
+ function cnt(m){var c={P:0,A:0,L:0,E:0};Object.keys(m||{}).forEach(function(k){if(k!=='__k'&&c[m[k]]!=null)c[m[k]]++});return c}
+ function rows(){var R=recs(),ro=LS('sclStuRoster',[]),out=[];
+  CL.filter(function(c){return!S.cls||c===S.cls}).forEach(function(c){var enr=ro.filter(function(s){return String(s.cls).toLowerCase()===c.toLowerCase()}),rr=R.filter(function(r){return r.cls===c});
+   if(!rr.length)out.push({cls:c,enr:enr.length,pending:1,key:c});
+   rr.sort(function(a,b){return String(a.period).localeCompare(String(b.period))}).forEach(function(r){out.push({cls:c,enr:enr.length,r:r,key:c+'|'+r.period,roster:enr})})});return out}
+ function draw(d){var rw=rows(),tot={P:0,A:0,L:0,E:0},taken=0;
+  rw.forEach(function(x){if(x.r){taken++;var c=cnt(x.r.marks);for(var k in c)tot[k]+=c[k]}});
+  var n=tot.P+tot.A+tot.L+tot.E||1;
+  var h='<h4>📋 STUDENT ATTENDANCE REGISTER</h4><div class="ng-reg-bar"><div><label>Date</label><input type="date" id="ngD" value="'+S.date+'"></div><div><label>Class</label><select id="ngC"><option value="">All classes</option>'+CL.map(function(c){return'<option'+(c===S.cls?' selected':'')+'>'+c+'</option>'}).join('')+'</select></div></div>'+
+  '<div class="scl300-stats"><div><b>'+tot.P+'</b>Present</div><div><b>'+tot.A+'</b>Absent</div><div><b>'+tot.L+'</b>Late</div><div><b>'+Math.round((tot.P+tot.L)/n*100)+'%</b>Rate</div></div>'+
+  '<div class="ng-reg-wrap" style="margin-top:10px"><table class="ng-reg-tbl"><tr><th>Class</th><th>Period</th><th>Subject / Teacher</th><th>Enrolled</th><th>P</th><th>A</th><th>L</th><th>Status</th><th>Time</th></tr>';
+  rw.forEach(function(x){if(x.pending){h+='<tr><td>'+esc(x.cls)+'</td><td>—</td><td>—</td><td>'+x.enr+'</td><td>–</td><td>–</td><td>–</td><td><span class="ng-pill no">Not taken</span></td><td>—</td></tr>';return}
+   var r=x.r,c=cnt(r.marks),tm=r.savedAt?new Date(r.savedAt).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):'—';
+   h+='<tr class="ng-row" data-k="'+esc(x.key)+'"><td>'+esc(x.cls)+'</td><td>'+pl(r.period)+'</td><td>'+esc(r.subject||'—')+'<br><small>'+esc(r.teacher||'')+'</small></td><td>'+x.enr+'</td><td>'+c.P+'</td><td>'+c.A+'</td><td>'+c.L+'</td><td><span class="ng-pill ok">Taken</span></td><td>'+tm+'</td></tr>';
+   if(S.open===x.key){var ro=x.roster||[],m=r.marks||{};h+='<tr><td colspan="9">'+(ro.length?ro.map(function(s){var v=m[s.id]||'–';return'<span class="ng-chip '+v+'">'+esc(s.name)+' · '+v+'</span>'}).join(''):'<small>No roster on this device; student marks: '+Object.keys(m).filter(function(k){return k!=='__k'}).length+'</small>')+'</td></tr>'}});
+  h+='</table></div><div style="margin-top:8px"><button class="scl300-cta alt" id="ngX" type="button">📤 Export CSV</button><button class="scl300-cta" id="ngR" type="button">🔄 Refresh from server</button></div><div class="ng-cloud">☁ '+esc(S.cloud)+' · Tap a row to see each student.</div>';
+  d.innerHTML=h;
+  d.querySelector('#ngD').onchange=function(e){S.date=e.target.value;S.open=null;draw(d);pull(d)};
+  d.querySelector('#ngC').onchange=function(e){S.cls=e.target.value;draw(d)};
+  d.querySelector('#ngR').onclick=function(){sync().then(function(){pull(d)})};
+  d.querySelector('#ngX').onclick=function(){var l=[['Date','Class','Period','Subject','Teacher','Present','Absent','Late','Excused']];rw.forEach(function(x){if(x.r){var c=cnt(x.r.marks);l.push([S.date,x.cls,pl(x.r.period),x.r.subject||'',x.r.teacher||'',c.P,c.A,c.L,c.E])}});
+   var b=new Blob([l.map(function(r){return r.map(function(v){return'"'+String(v).replace(/"/g,'""')+'"'}).join(',')}).join('\n')],{type:'text/csv'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='student-attendance-'+S.date+'.csv';a.click()};
+  d.querySelectorAll('.ng-row').forEach(function(tr){tr.onclick=function(){S.open=S.open===tr.dataset.k?null:tr.dataset.k;draw(d)}})}
+ /* ---- backend: pull + push (table student_attendance, see backend/ folder) ---- */
+ function pull(d){if(!U||!K){S.cloud='Server not configured';draw(d);return}
+  fetch(U+'/rest/v1/student_attendance?att_date=eq.'+S.date+'&select=*',{headers:hdr()}).then(function(r){if(r.status===404){S.cloud='Server table not created yet (run backend/001_student_attendance.sql)';return null}if(r.status===401||r.status===403){S.cloud='Sign in with a staff/admin account to sync';return null}if(!r.ok){S.cloud='Server error '+r.status;return null}return r.json()}).then(function(j){
+   if(j){S.srv[S.date]=j.map(function(x){return{key:x.att_key,date:x.att_date,cls:x.class_name,period:x.period,subject:x.subject,teacher:x.teacher_name,marks:x.marks||{},savedAt:x.saved_at}});S.cloud='Synced with school server · '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}
+   if(document.body.contains(d))draw(d)}).catch(function(){S.cloud='Offline: showing this device only';if(document.body.contains(d))draw(d)})}
+ function sync(){if(!U||!K||!tok())return Promise.resolve();var a=LS('sclStuAtt',{}),done=LS('sclAttSynced',{}),batch=[];
+  Object.keys(a).forEach(function(k){var r=a[k];if(r&&r.savedAt&&done[k]!==r.savedAt)batch.push({att_key:k,att_date:r.date,class_name:r.cls,period:String(r.period==null?'0':r.period),subject:r.subject||'',teacher_name:r.teacher||'',marks:r.marks||{},saved_at:r.savedAt})});
+  if(!batch.length)return Promise.resolve();
+  return fetch(U+'/rest/v1/student_attendance?on_conflict=att_key',{method:'POST',headers:hdr({Prefer:'resolution=merge-duplicates,return=minimal'}),body:JSON.stringify(batch)}).then(function(r){if(r.ok){batch.forEach(function(b){done[b.att_key]=b.saved_at});localStorage.setItem('sclAttSynced',JSON.stringify(done));
+   fetch(U+'/functions/v1/scl-student-attendance-notify',{method:'POST',headers:hdr(),body:JSON.stringify({keys:batch.map(function(b){return b.att_key})})}).catch(function(){})}}).catch(function(){})}
+ setInterval(function(){try{sync()}catch(e){}},60000);
+ var t=setInterval(function(){var f=window.renderStudentAttendance;if(f&&/ng-conf/.test(f.toString())&&!f.__ng2){clearInterval(t);
+  var w=function(){var r=f.apply(this,arguments),b=document.getElementById('sclSuiteBody');
+   if(b&&window.sclCanSeeStudentAttendance&&window.sclCanSeeStudentAttendance()&&!b.querySelector('#ngAttReg')){var d=document.createElement('div');d.id='ngAttReg';var c=b.querySelector('.ng-conf'),a=c&&c.parentNode;if(a)a.insertAdjacentElement('afterend',d);else b.insertBefore(d,b.firstChild);draw(d);sync().then(function(){pull(d)})}
+   return r};w.__ng2=1;window.renderStudentAttendance=w}},400);
+})();
+</script>
 </body></html>
