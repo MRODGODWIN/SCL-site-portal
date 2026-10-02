@@ -9762,7 +9762,7 @@ window.addEventListener('load',function(){patchWorker();window.openSchoolCurricu
 
 </script>
 
-<!-- SCL v300/v301 upgrade layer -->
+<!-- SCL v300/v301/v302 upgrade layer -->
 <style id="scl-v300-css">
 /* ===== SCL v300 — final upgrade layer (colour, contrast, icons, hub, admin groups, profile, attendance) ===== */
 :root{--scl-ink:#14061f;--scl-paper:#ffffff}
@@ -10200,7 +10200,124 @@ function lesForm(){const d=LE.draft;let h='<h4>'+(d.u?'Edit':'New')+' lesson not
  return h+'<label>Status</label><select id="ln-status">'+[['draft','Draft'],['ready','Ready to teach'],['taught','Taught']].map(o=>'<option value="'+o[0]+'"'+(d.status===o[0]?' selected':'')+'>'+o[1]+'</option>').join('')+'</select><div style="margin-top:8px"><button class="scl300-cta" data-act="le-save" type="button">💾 Save</button><button class="scl300-cta warn" data-act="le-back" type="button">Cancel</button></div>'}
 function readLes(){const d=LE.draft;if(!d||!$('ln-topic'))return;d.cls=v('ln-cls');d.subject=v('ln-sub');d.term=v('ln-term');d.week=v('ln-week');d.date=v('ln-date');d.dur=v('ln-dur');d.topic=v('ln-topic');d.status=v('ln-status');LF.forEach(f=>d[f[0]]=($('ln-'+f[0])||{value:''}).value)}
 const nc=c=>String(c||'').toLowerCase().replace(/[^a-z0-9]/g,'');
-function lesPrint(x){const w=window.open('','_blank');if(!w){fb('Allow pop-ups to print.','warn');return}w.document.write('<!doctype html><html><head><title>Lesson Note</title><style>body{font-family:Arial,sans-serif;padding:24px;color:#111}h1{color:#650007;margin:0}td,th{border:1px solid #999;padding:6px;text-align:left;vertical-align:top}table{border-collapse:collapse;width:100%;margin:6px 0}</style></head><body><h1>Shining Child Leaders School</h1><h2>Lesson Note</h2><table><tr><th>Class</th><td>'+esc(x.cls)+'</td><th>Subject</th><td>'+esc(x.subject)+'</td></tr><tr><th>Term / Week</th><td>'+esc(x.term)+' / '+esc(x.week)+'</td><th>Date / Duration</th><td>'+esc(x.date)+' / '+esc(x.dur)+' min</td></tr><tr><th>Topic</th><td colspan="3">'+esc(x.topic)+'</td></tr></table>'+LF.map(f=>'<h3>'+f[1]+'</h3><p style="white-space:pre-wrap">'+esc(x[f[0]]||'—')+'</p>').join('')+'<script>window.onload=function(){window.print()}<\/script></body></html>');w.document.close()}
+function lesPrint(x){const w=window.open('','_blank');if(!w){fb('Allow pop-ups to print.','warn');return}w.document.write('<!doctype html><html><head><title>Lesson Note</title><style>body{font-family:Arial,sans-serif;padding:24px;color:#111}h1{color:#650007;margin:0}td,th{border:1px solid #999;padding:6px;text-align:left;vertical-align:top}table{border-collapse:collapse;width:100%;margin:6px 0}</style></head><body><h1>Shining Child Leaders School</h1><h2>Lesson Note</h2><table><tr><th>Class</th><td>'+esc(x.cls)+'</td><th>Subject</th><td>'+esc(x.subject)+'</td></tr><tr><th>Term / Week</th><td>'+esc(x.term)+' / '+esc(x.week)+'</td><th>Date / Duration</th><td>'+esc(x.date)+' / '+esc(x.dur)+' min</td></tr><tr><th>Topic</th><td colspan="3">'+esc(x.topic)+'</td></tr></table>'+LF.map(f=>'<h3>'+f[1]+'</h3><p style="white-space:pre-wrap">'+esc(x[f[0]]||'—')+'</p>').join('')+'<script>window.onload=function(){window.print()}<\/script>
+<!-- SCL FINAL STABILITY PASS — attendance/location safety + unified AI/Multiple coin + centred WhatsApp -->
+<style id="scl-final-stability-css">
+/* Unified Multiple + Educational Intelligence coin: opposite the four-line menu. */
+#sclUnifiedAiMulti{position:fixed;right:12px;top:50%;transform:translateY(-50%);width:54px;height:54px;padding:0;border:0;background:transparent;z-index:10081;cursor:pointer;perspective:900px;-webkit-tap-highlight-color:transparent}
+#sclUnifiedAiMulti .scl-uam-inner{position:relative;width:100%;height:100%;transform-style:preserve-3d;animation:sclUamFlip 4s cubic-bezier(.45,.05,.55,.95) infinite}
+#sclUnifiedAiMulti .scl-uam-face{position:absolute;inset:0;border-radius:50%;backface-visibility:hidden;-webkit-backface-visibility:hidden;display:flex;align-items:center;justify-content:center;overflow:hidden;border:3px solid #f2ae00;box-shadow:0 7px 20px rgba(0,0,0,.30),0 0 0 2px rgba(255,255,255,.75)}
+#sclUnifiedAiMulti .scl-uam-front{background:#fff}
+#sclUnifiedAiMulti .scl-uam-front img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+#sclUnifiedAiMulti .scl-uam-back{transform:rotateY(180deg);background:radial-gradient(circle at 35% 30%,#9b5cff,#4a176f 70%,#21072f);color:#fff;flex-direction:column;line-height:1;text-align:center}
+#sclUnifiedAiMulti .scl-uam-back b{font-size:20px;letter-spacing:.08em;text-shadow:0 2px 8px #0008}
+#sclUnifiedAiMulti .scl-uam-back small{font-size:6px;font-weight:900;letter-spacing:.08em;margin-top:3px}
+@keyframes sclUamFlip{0%,42%{transform:rotateY(0deg)}50%,92%{transform:rotateY(180deg)}100%{transform:rotateY(360deg)}}
+#sclUnifiedAiMulti:active{transform:translateY(-50%) scale(.94)}
+#sclUnifiedAiMulti:focus-visible{outline:3px solid #fff;outline-offset:3px}
+@media(max-width:600px){#sclUnifiedAiMulti{right:9px;width:50px;height:50px}}
+@media(prefers-reduced-motion:reduce){#sclUnifiedAiMulti .scl-uam-inner{animation:none}}
+/* The old separate floating AI/Multiple controls are replaced by the one unified control. */
+#sclMultiLogo,.scl-ai-float{display:none!important}
+/* WhatsApp launcher stays above the bottom bar, centred, with the existing disappearing/fade feel. */
+html body .wa{left:50%!important;right:auto!important;bottom:78px!important;transform:translateX(-50%);z-index:10020!important;animation:sclWaFade 3.8s ease-in-out infinite!important;white-space:nowrap}
+@keyframes sclWaFade{0%,100%{opacity:1;transform:translateX(-50%) translateY(0)}48%{opacity:.18;transform:translateX(-50%) translateY(1px)}60%{opacity:.55;transform:translateX(-50%) translateY(0)}}
+@media(max-width:600px){html body .wa{bottom:76px!important;padding:9px 13px!important;font-size:12px!important}}
+/* Do not allow a malformed/empty branch identifier to reach a UUID endpoint. */
+</style>
+<script id="scl-final-stability-js">
+(function(){'use strict';
+  var $=function(s,r){return (r||document).querySelector(s)};
+  var esc=window.esc||function(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})};
+
+  /* Unified coin. It reuses the existing Multiple logo already embedded in this file. */
+  function installUnifiedCoin(){
+    if($('#sclUnifiedAiMulti'))return;
+    var old=$('#sclMultiLogo');
+    var src=old&&old.querySelector('img')?old.querySelector('img').getAttribute('src'):'';
+    var b=document.createElement('button');
+    b.id='sclUnifiedAiMulti'; b.type='button'; b.setAttribute('aria-label','Multiple and Educational Intelligence AI');
+    b.title='Multiple • Educational Intelligence AI';
+    b.innerHTML='<span class="scl-uam-inner"><span class="scl-uam-face scl-uam-front">'+(src?'<img alt="Multiple logo" src="'+src+'">':'<b style="color:#650007;font-size:12px">MULTIPLE</b>')+'</span><span class="scl-uam-face scl-uam-back"><b>AI</b><small>EDUCATIONAL<br>INTELLIGENCE</small></span></span>';
+    b.addEventListener('click',function(e){
+      e.preventDefault(); e.stopPropagation();
+      var m=$('#sclAiModal');
+      if(m){m.classList.add('open');m.style.display='flex';m.setAttribute('aria-hidden','false');var input=$('#sclAiInput',m);if(input){setTimeout(function(){input.focus()},80)}}
+      else if(typeof window.sclAskAI==='function')window.sclAskAI();
+    },true);
+    document.body.appendChild(b);
+  }
+  function hideLegacy(){var x=$('#sclMultiLogo');if(x)x.remove();document.querySelectorAll('.scl-ai-float').forEach(function(x){x.remove()})}
+
+  /* Make the branch updater refuse empty/non-UUID ids and use its existing name fallback. */
+  function hardenBranchUpdater(){
+    if(typeof window.sclOpenBranchAdmin!=='function')return;
+    if(window.sclOpenBranchAdmin.__sclFinalHardened)return;
+    var original=window.sclOpenBranchAdmin;
+    var wrapped=async function(){
+      try{return await original.apply(this,arguments)}catch(e){
+        var msg=String(e&&e.message||e||'');
+        if(/invalid input syntax for type uuid/i.test(msg)){
+          var box=$('#sclBranchAdminBody');
+          if(box)box.insertAdjacentHTML('afterbegin','<div class="scl-att-warning"><b>Location setup is still open.</b> The branch list was protected from an empty/invalid UUID. Refresh the branch list and capture GPS again.</div>');
+          return;
+        }
+        throw e;
+      }
+    };
+    wrapped.__sclFinalHardened=true; window.sclOpenBranchAdmin=wrapped;
+  }
+
+  /* Keep service-rank UUID failures from appearing as a page-level red error. The rank card reports it locally. */
+  function hardenRank(){
+    if(typeof window.sclLoadServiceRankIntoProfile==='function'&&!window.sclLoadServiceRankIntoProfile.__sclFinalHardened){
+      var original=window.sclLoadServiceRankIntoProfile;
+      var wrapped=async function(){
+        try{return await original.apply(this,arguments)}catch(e){
+          var msg=String(e&&e.message||e||'');
+          if(/invalid input syntax for type uuid/i.test(msg)){
+            var box=$('#sclProfileServiceRankContent');
+            if(box){box.className='scl-rank-pending';box.textContent='Service rank is waiting for the staff account to be linked to a valid SCL staff record. Attendance and GPS setup remain available.'}
+            return;
+          }
+          throw e;
+        }
+      };
+      wrapped.__sclFinalHardened=true;window.sclLoadServiceRankIntoProfile=wrapped;
+    }
+  }
+
+  /* Rename every visible biometric sign-in label to the requested “Biometrics Login” wording. */
+  function renameBiometrics(){
+    document.querySelectorAll('button,a,[role="button"],label').forEach(function(el){
+      var t=(el.textContent||'').trim();
+      if(/biometric/i.test(t)&&/(sign\s*-?\s*in|signin)/i.test(t)){
+        el.textContent=t.replace(/biometric\s+sign[\s-]*in/ig,'Biometrics Login').replace(/sign[\s-]*in\s+with\s+fingerprint\s*\/\s*face/ig,'Biometrics Login');
+      }
+    });
+  }
+
+  function bypassRankFetchFeedback(){
+    if(window.__sclRankFetchFeedbackBypassed||typeof window.fetch!=='function')return;
+    var raw=window.__sclRawFetch; if(typeof raw!=='function')return;
+    var current=window.fetch;
+    window.fetch=function(u,o){
+      var url=String(u&&u.url||u||'');
+      if(/\/functions\/v1\/scl-service-rank-api(?:\?|$)/.test(url))return raw(u,o);
+      return current.apply(this,arguments);
+    };
+    window.__sclRankFetchFeedbackBypassed=true;
+  }
+
+  function boot(){
+    try{hideLegacy();installUnifiedCoin();hardenBranchUpdater();hardenRank();bypassRankFetchFeedback();renameBiometrics();}catch(e){console.warn('SCL final stability pass:',e)}
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
+  setTimeout(boot,900); setTimeout(boot,2200);
+})();
+</script>
+
+</body></html>');w.document.close()}
 const LEH={
  'le-f':()=>{LE.f.cls=v('lf-cls');LE.f.q=v('lf-q');lesRender()},
  'le-new':()=>{LE.draft={id:nid(),cls:'Primary 1',subject:'',term:'First Term',week:'',date:'',dur:'40',topic:'',status:'draft',objectives:'',prior:'',aids:'',content:'',activities:'',assess:'',assign:'',reflect:''};LE.pick=[];LE.view='edit';lesRender()},
@@ -10250,6 +10367,36 @@ window.sclSuiteTab=function(tab){if(MODS[tab]&&$('sclSuiteBody')){try{QA('.scl-s
  return origTab?origTab.apply(this,arguments):undefined};
 window.sclOpenCbt=()=>{call('openM','sclSuiteModal');setTimeout(()=>window.sclSuiteTab('cbt'),40)};
 setTimeout(()=>window.sclSync(true),3500);
+/* ---------- v302: Branch & GPS approval (robust ids, capture, manual coordinates, clear errors) ---------- */
+const ATTU=()=>SUP()+'/functions/v1/scl-attendance';
+const authTok=()=>{try{return(JSON.parse(sessionStorage.getItem('sclAuthSession')||'null')||{}).accessToken||''}catch(_){return''}};
+const rawF=(...a)=>(window.__sclRawFetch||window.fetch).apply(window,a);
+async function brFetch(action,method,body){const h={apikey:PUBK(),'Content-Type':'application/json'};let tok=authTok();if(!tok){try{const s=await sb().auth.getSession();tok=s&&s.data&&s.data.session&&s.data.session.access_token||''}catch(_){}}if(tok)h.Authorization='Bearer '+tok;const r=await rawF(ATTU()+'?action='+encodeURIComponent(action),{method:method||'GET',headers:h,body:body?JSON.stringify(body):undefined});let d={};try{d=await r.json()}catch(_){}if(!r.ok)throw new Error(d.error||d.message||('Server said '+r.status));return d}
+const bid=b=>String(b.id||b.branch_id||b.uuid||b.branchId||'').trim();
+let BR=[];
+async function brLoad(){const d=await brFetch('branches');BR=(Array.isArray(d)?d:d.branches)||[];return BR}
+function brHtml(){const set=BR.filter(b=>b.latitude!=null&&b.longitude!=null).length;
+ return '<div class="scl-att-card" data-scl-keep style="color:#14061f"><h4>Approved SCL Branches</h4><div class="scl300-note"><b>How approval works:</b> a branch is <b>approved for attendance</b> once its exact GPS is saved. Stand <b>inside the school compound</b> (outdoors, GPS on), tap <b>“Capture GPS here”</b> for that branch, and wait for the green ✅. Staff can then sign in within the radius shown. If you are not at the school, use <b>“Type coordinates”</b> below (copy them from Google Maps: long-press the school → the two numbers).</div><div class="scl300-stats"><div><b>'+BR.length+'</b>Branches</div><div><b>'+set+'</b>Approved</div><div><b>'+(BR.length-set)+'</b>Waiting</div><div><b>—</b>GPS</div></div><div style="overflow:auto"><table class="scl300-tbl"><tr><th>Branch</th><th>Status</th><th>Radius</th><th></th></tr>'+(BR.map((b,i)=>'<tr><td><b>'+esc(b.name)+'</b><br><small>'+esc(b.address||'')+'</small></td><td>'+(b.latitude!=null&&b.longitude!=null?'✅ Approved<br><small>'+Number(b.latitude).toFixed(6)+', '+Number(b.longitude).toFixed(6)+'</small>':'⚠️ GPS not set')+'</td><td>'+esc(b.radius_m||150)+' m</td><td><button type="button" class="scl300-cta" style="padding:8px 10px;margin:0" data-br="cap" data-i="'+i+'">📍 Capture GPS here</button></td></tr>').join('')||'<tr><td colspan="4">No branches found.</td></tr>')+'</table></div><div id="br-status" class="scl300-note" style="display:none"></div></div>'+
+ '<div class="scl-att-card" data-scl-keep style="color:#14061f"><h4>⌨ Type coordinates</h4><div class="scl300-row"><div><label>Branch</label><select id="br-sel">'+BR.map((b,i)=>'<option value="'+i+'">'+esc(b.name)+'</option>').join('')+'</select></div><div><label>Radius (metres)</label><input id="br-rad" type="number" min="25" max="1000" value="150"></div></div><div class="scl300-row"><div><label>Latitude</label><input id="br-lat" placeholder="6.5832"></div><div><label>Longitude</label><input id="br-lng" placeholder="3.9894"></div></div><button class="scl300-cta alt" type="button" data-br="man">💾 Save coordinates</button></div>'+
+ '<div class="scl-att-card" data-scl-keep style="color:#14061f"><h4>➕ Add another branch</h4><div class="scl300-row"><div><label>Branch name</label><input id="br-n"></div><div><label>Radius (m)</label><input id="br-r2" type="number" value="150"></div></div><label>Full address</label><input id="br-a"><button class="scl300-cta" type="button" data-br="add">➕ Add branch</button></div>'}
+function brSay(t,type){const s=$('br-status');if(!s)return;s.style.display='block';s.style.background=type==='err'?'#ffe3e3':type==='ok'?'#e6f7ec':'#fff6d6';s.textContent=t;fb(t,type||'info',type==='err'?5000:2500)}
+async function brSave(i,lat,lng,rad){const b=BR[i];if(!b)throw new Error('Branch not found — reload the list.');const id=bid(b),body={latitude:lat,longitude:lng};if(rad)body.radius_m=rad;let how='';
+ if(id){try{await brFetch('branches','PATCH',Object.assign({id},body));how='id'}catch(e){if(!/uuid|id/i.test(e.message))throw e}}
+ if(!how){window.__sclQuiet=(window.__sclQuiet||0)+1;try{const q=await sb().from('school_branches').update(body).eq('name',b.name).select();if(q.error)throw q.error;if(!q.data||!q.data.length)throw new Error('The database refused the update (your account may not have admin rights, or the branch name does not match).');how='name'}finally{window.__sclQuiet--}}
+ await brLoad();const nb=BR.find(x=>x.name===b.name);if(nb&&(nb.latitude==null||nb.longitude==null))throw new Error('Saved, but the list still shows NOT SET — press Reload and check again.');return how}
+async function brRender(){const box=$('sclBranchAdminBody');if(!box)return;box.innerHTML=brHtml();box.onclick=async e=>{const t=e.target.closest('[data-br]');if(!t)return;const a=t.dataset.br;
+  try{if(a==='cap'){const i=+t.dataset.i;if(!navigator.geolocation){brSay('This phone/browser cannot give a location. Use “Type coordinates”.','err');return}brSay('Getting a precise GPS fix… keep the phone outdoors and wait up to 20 seconds.','info');
+    const pos=await new Promise((res,rej)=>navigator.geolocation.getCurrentPosition(res,rej,{enableHighAccuracy:true,timeout:25000,maximumAge:0}));const c=pos.coords,acc=Math.round(c.accuracy||0);
+    if(acc>80&&!confirm('GPS accuracy is only about '+acc+' metres. A weak fix can make staff sign-in fail. Save anyway? (Tip: step outside and try again for a better fix.)'))return;
+    const how=await brSave(i,c.latitude,c.longitude,0);brSay('✅ '+BR[i].name+' approved — GPS saved (accuracy ±'+acc+' m).','ok');brRender();setTimeout(()=>brSay('✅ '+BR[i].name+' approved.','ok'),50)}
+   if(a==='man'){const i=+$('br-sel').value,lat=parseFloat($('br-lat').value),lng=parseFloat($('br-lng').value),rad=+$('br-rad').value||150;if(!isFinite(lat)||!isFinite(lng)||Math.abs(lat)>90||Math.abs(lng)>180){brSay('Enter valid numbers, e.g. latitude 6.5832 and longitude 3.9894.','err');return}await brSave(i,lat,lng,rad);brSay('✅ '+BR[i].name+' approved with the coordinates you typed.','ok');brRender()}
+   if(a==='add'){const n=v('br-n'),ad=v('br-a'),r=+v('br-r2')||150;if(!n||!ad){brSay('Branch name and address are required.','err');return}await brFetch('branches','POST',{name:n,address:ad,radius_m:r});await brLoad();brSay('Branch added — now capture its GPS while you are there.','ok');brRender()}}
+  catch(err){const m=err&&err.code===1?'Location permission was blocked. Allow Location for this site in the browser settings, then try again.':err&&err.code===3?'GPS timed out. Go outdoors and try again.':(err&&err.message)||'Could not save.';brSay('❌ '+m,'err')}}}
+const origBranch=window.sclOpenBranchAdmin;
+window.sclOpenBranchAdmin=async function(){try{if(origBranch)await origBranch.apply(this,arguments)}catch(_){}
+ const box=$('sclBranchAdminBody');if(!box){fb('Branch screen is not available.','err');return}box.innerHTML='<div class="scl300-note" data-scl-keep style="color:#14061f">Loading branches…</div>';
+ try{await brLoad();brRender()}catch(e){box.innerHTML='<div class="scl300-note" data-scl-keep style="color:#14061f">❌ Could not load branches: '+esc(e.message)+'<br>Sign in as an administrator and try again.</div>'}};
+window.sclCaptureBranchGPS=function(){window.sclOpenBranchAdmin()};
 })();
 
 </script>
