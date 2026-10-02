@@ -9762,7 +9762,7 @@ window.addEventListener('load',function(){patchWorker();window.openSchoolCurricu
 
 </script>
 
-<!-- SCL v300 final upgrade layer -->
+<!-- SCL v300/v301 upgrade layer -->
 <style id="scl-v300-css">
 /* ===== SCL v300 — final upgrade layer (colour, contrast, icons, hub, admin groups, profile, attendance) ===== */
 :root{--scl-ink:#14061f;--scl-paper:#ffffff}
@@ -9879,6 +9879,9 @@ html body #sclThemeToggle{right:80px!important;top:14px!important}
 html body .hv2,html body .hv2>section,html body #hv2{background:transparent!important}
 html body .hv2 *[class*=card],html body .hv2 section>div{backdrop-filter:blur(6px)}
 
+/* v300b: no outlined / stroked / glowing text anywhere — plain text only */
+html body *,html body *::before,html body *::after,html #accessGate *,html #accessGate *::before,html #accessGate *::after{text-shadow:none!important;-webkit-text-stroke:0!important;-webkit-text-stroke-width:0!important;paint-order:normal!important;text-stroke:0!important}
+
 </style>
 <script id="scl-v300-js">
 (function(){'use strict';
@@ -9904,7 +9907,7 @@ window.sclFB=fb;
 const oldToast=window.toast;window.toast=function(t){try{fb(String(t==null?'Done':t))}catch(e){try{oldToast&&oldToast(t)}catch(_){}}};window.sclV98Feedback=function(t){fb(String(t))};
 window.addEventListener('error',e=>{if(e&&e.message&&!/ResizeObserver|Script error/.test(e.message))fb('Something went wrong: '+e.message.slice(0,90),'err')});
 window.addEventListener('unhandledrejection',e=>{const m=e&&e.reason&&(e.reason.message||String(e.reason))||'Request failed';fb('Failed: '+String(m).slice(0,100),'err')});
-(function(){const of=window.fetch;if(!of)return;window.fetch=function(u,o){const url=String(u&&u.url||u||''),m=String((o&&o.method)||(u&&u.method)||'GET').toUpperCase();const mine=/supabase|\/functions\/v1\/|\/rest\/v1\/|\/api\//.test(url);
+(function(){const of=window.fetch;if(!of)return;window.__sclRawFetch=of.bind(window);window.fetch=function(u,o){const url=String(u&&u.url||u||''),m=String((o&&o.method)||(u&&u.method)||'GET').toUpperCase();const mine=!window.__sclQuiet&&/supabase|\/functions\/v1\/|\/rest\/v1\/|\/api\//.test(url);
  return of.apply(this,arguments).then(r=>{if(mine&&!/grant_type=refresh/.test(url)){if(!r.ok){r.clone().json().then(j=>fb((j&&(j.error||j.message||j.msg))||('Request failed ('+r.status+')'),'err')).catch(()=>fb('Request failed ('+r.status+')','err'))}else if(m!=='GET'&&!/\/rpc\/|\/auth\/v1\/token/.test(url)){fb('Done — saved successfully.','ok')}}return r}).catch(e=>{if(mine)fb('Connection problem — check your internet and try again.','err');throw e})}})();
 /* click feedback + missing-handler guard */
 const KW=new Set(['if','return','function','event','this','document','window','setTimeout','alert','confirm','void','new','typeof','closeM','openM','toast','sclCloseShortcutBar']);
@@ -9937,7 +9940,7 @@ function decorate(root){QA('button,a.btn,nav a,.ag-btn,[role=button],.scl-shortc
 document.addEventListener('pointerdown',function(e){const b=e.target.closest&&e.target.closest('button,.btn,.scl-shortcut-item,nav a');if(!b||b.disabled||b.matches('.scl-bottom-item,.logo-button,#sclMultiLogo,#sclShortcutToggle'))return;try{const cs=getComputedStyle(b);if(cs.position==='static')b.style.position='relative';b.style.overflow=cs.overflow==='visible'?'hidden':cs.overflow;const r=b.getBoundingClientRect(),s=Math.max(r.width,r.height),sp=document.createElement('span');sp.className='scl-rip';sp.style.cssText='width:'+s+'px;height:'+s+'px;left:'+(e.clientX-r.left-s/2)+'px;top:'+(e.clientY-r.top-s/2)+'px';b.appendChild(sp);setTimeout(()=>sp.remove(),650)}catch(_){}},true);
 /* ---------- Multiple logo (right edge) + school logo hub (left edge) ---------- */
 function installLogos(){if(!$('sclMultiLogo')){const m=document.createElement('button');m.id='sclMultiLogo';m.type='button';m.setAttribute('aria-label','Multiple');m.title='Multiple';m.innerHTML='<img alt="Multiple logo" src="data:image/webp;base64,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">';m.onclick=()=>fb('MULTIPLE — proudly connected with Shining Child Leaders School.','info',3200);document.body.appendChild(m)}
- if(!$('sclHubMenu')){const items=[['🏅','Student Leaders',()=>gal('studentRanking'),'#ff4fa3','#7b4dff'],['👩‍🏫','Staff Rank',()=>gal('rank'),'#3d7bff','#17b8d9'],['🥇','Medals & Records',()=>gal('medals'),'#ffb300','#ff6a3d'],['🎵','School Anthem',()=>gal('anthem'),'#17b890','#3d7bff'],['🎓','Curriculum',()=>call('openSchoolCurriculum'),'#7b4dff','#3d7bff'],['🗓️','Timetable',()=>suite('timetable'),'#ff6a3d','#ff4fa3'],['✅','Student Attendance',()=>call('openStudentAttendance'),'#17b890','#8bc34a'],['🏆','Results',()=>call('openResults'),'#ffb300','#ff4fa3'],['📜','Certificates',()=>call('openCertificate'),'#3d7bff','#7b4dff'],['🎖️','Prefect Badges',()=>call('openSclLeadership'),'#e91e63','#ff9800'],['📝','Assignments & CBT',()=>suite('assignments'),'#00acc1','#3d7bff'],['📓','Lesson Notes',()=>suite('lessons'),'#8e24aa','#ff4fa3']];
+ if(!$('sclHubMenu')){const items=[['🏅','Student Leaders',()=>gal('studentRanking'),'#ff4fa3','#7b4dff'],['👩‍🏫','Staff Rank',()=>gal('rank'),'#3d7bff','#17b8d9'],['🥇','Medals & Records',()=>gal('medals'),'#ffb300','#ff6a3d'],['🎵','School Anthem',()=>gal('anthem'),'#17b890','#3d7bff'],['🎓','Curriculum',()=>call('openSchoolCurriculum'),'#7b4dff','#3d7bff'],['🗓️','Timetable',()=>suite('timetable'),'#ff6a3d','#ff4fa3'],['✅','Student Attendance',()=>call('openStudentAttendance'),'#17b890','#8bc34a'],['🏆','Results',()=>call('openResults'),'#ffb300','#ff4fa3'],['📜','Certificates',()=>call('openCertificate'),'#3d7bff','#7b4dff'],['🎖️','Prefect Badges',()=>call('openSclLeadership'),'#e91e63','#ff9800'],['🧠','CBT Tests',()=>suite('cbt'),'#00acc1','#3d7bff'],['📝','Assignments',()=>suite('assignments'),'#43a047','#00acc1'],['📓','Lesson Notes',()=>suite('lessons'),'#8e24aa','#ff4fa3'],['📊','Bulk Excel',()=>suite('bulk'),'#ef6c00','#f9a825'],['📨','Notifications',()=>call('sclOpenOutbox'),'#d81b60','#8e24aa']];
  const h=document.createElement('div');h.id='sclHubMenu';h.innerHTML='<div class="hub-panel"><button class="scl300-x" type="button" aria-label="Close">✖</button><h3>Academic Activities</h3><small>Tap an icon to open it.</small><div class="hub-grid"></div></div>';document.body.appendChild(h);
  const g=Q('.hub-grid',h);items.forEach((it,i)=>{const b=document.createElement('button');b.type='button';b.style.cssText='--i:'+i+';--a:'+it[3]+';--b:'+it[4];b.innerHTML='<span>'+it[0]+'</span>'+esc(it[1]);b.onclick=()=>{closeHub();setTimeout(it[2],120)};g.appendChild(b)});
  h.addEventListener('click',e=>{if(e.target===h||e.target.closest('.scl300-x'))closeHub()})}
@@ -9952,7 +9955,7 @@ function catOf(b){const t=(b.textContent||'')+' '+(b.getAttribute('onclick')||''
 function extraBtn(label,small,fn){const b=document.createElement('button');b.type='button';b.className='scl-role-action scl-shortcut-item';b.dataset.v300extra='1';b.innerHTML=label+(small?'<small>'+small+'</small>':'');b.onclick=fn;return b}
 function group(container){const direct=[].filter.call(container.children,x=>/^(BUTTON|A)$/.test(x.tagName));const first=!container.dataset.sclAcc;if(!first&&!direct.length)return;
  let all=first?direct:[].concat(direct,QA('.scl-acc-body>*',container));if(first&&all.length<5)return;
- if(!QA('[data-v300extra]',container).length&&!all.some(b=>b.dataset.v300extra)){[extraBtn('✅ Student Attendance (All classes & periods)','Take, view and notify parents per period.',()=>call('openStudentAttendance')),extraBtn('🪪 User ID Protocol','Preview IDs: name + school initials + binary-style number.',()=>call('sclOpenIdProtocol')),extraBtn('🧪 Function Self-Test','Checks that every admin button is connected.',()=>call('sclSelfTest'))].forEach(b=>all.push(b))}
+ if(!QA('[data-v300extra]',container).length&&!all.some(b=>b.dataset.v300extra)){[extraBtn('✅ Student Attendance (All classes & periods)','Take, view and notify parents per period.',()=>call('openStudentAttendance')),extraBtn('🪪 User ID Protocol','Preview IDs: name + school initials + binary-style number.',()=>call('sclOpenIdProtocol')),extraBtn('📨 Notification Outbox','Parent/staff emails & SMS: status, resend.',()=>call('sclOpenOutbox')),extraBtn('🧪 Function Self-Test','Checks that every admin button is connected.',()=>call('sclSelfTest'))].forEach(b=>all.push(b))}
  const open=new Set(QA('.scl-acc-cat.open .scl-acc-head',container).map(h=>h.dataset.k));container.innerHTML='';container.classList.add('scl-acc');container.dataset.sclAcc='1';
  CATS.forEach(c=>{const items=all.filter(b=>catOf(b)===c);if(!items.length)return;const d=document.createElement('div');d.className='scl-acc-cat'+(open.has(c.t)?' open':'');const h=document.createElement('button');h.type='button';h.className='scl-acc-head';h.dataset.k=c.t;h.style.cssText='--a:'+c.a+';--b:'+c.b;h.innerHTML='<span style="font-size:20px">'+c.i+'</span><span>'+esc(c.t)+'</span><span class="n">'+items.length+'</span><span class="ch">▶</span>';const body=document.createElement('div');body.className='scl-acc-body';items.forEach(b=>body.appendChild(b));h.onclick=e=>{e.stopPropagation();d.classList.toggle('open');fb((d.classList.contains('open')?'Showing ':'Hid ')+c.t,'info',1100)};d.appendChild(h);d.appendChild(body);container.appendChild(d)})}
 function groupAll(){QA('.scl-admin-feature-grid,#sclShortcutGrid,.scl-suite-all-tools').forEach(c=>{try{group(c)}catch(e){}})}
@@ -10021,7 +10024,7 @@ function bioButtons(){const f=$('v-signin');if(f&&!$('sclBioBtn')){const b=docum
 /* ---------- STUDENT ATTENDANCE ---------- */
 const CLASSES=['Daycare','Nursery 1','Nursery 2','Reception','Primary 1','Primary 2','Primary 3','Primary 4','Primary 5','JSS 1','JSS 2','JSS 3','SSS 1','SSS 2','SSS 3'];
 const isSec=c=>/^(JSS|SSS)/i.test(c||'');const today=()=>new Date().toISOString().slice(0,10);
-const LS=(k,d)=>{try{return JSON.parse(localStorage.getItem(k)||'null')||d}catch(_){return d}},SV=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){fb('Storage is full — export and clear old records.','err')}};
+const LS=(k,d)=>{try{return JSON.parse(localStorage.getItem(k)||'null')||d}catch(_){return d}},SV=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){fb('Storage is full — export and clear old records.','err')}if(window.__sclPush)window.__sclPush(k)};
 const ST={tab:'take',date:today(),cls:'Primary 1',period:'0',subject:'',teacher:''};
 let marks={};
 const uid=()=>'S'+Date.now().toString(36)+Math.random().toString(36).slice(2,5);
@@ -10068,388 +10071,186 @@ async function saveAtt(){const list=roster(ST.cls);if(!list.length){fb('Add stud
  const full={P:'present',A:'absent',L:'late',E:'excused'},when=rec.date+(sec?' · Period '+rec.period+(rec.subject?' ('+rec.subject+')':''):' · daily register'),q=LS('sclStuNotify',[]);
  list.forEach(s=>q.push({id:uid(),at:Date.now(),student:s.name,cls:rec.cls,status:marks[s.id],when,pe:s.pe,pp:s.pp,msg:'Dear Parent, '+s.name+' ('+rec.cls+') was marked '+full[marks[s.id]]+' — '+when+'. Shining Child Leaders School.'}));SV('sclStuNotify',q.slice(-1500));
  const c={P:0,A:0,L:0,E:0};Object.values(rec.marks).forEach(v=>c[v]++);fb('Attendance saved: '+c.P+' present, '+c.A+' absent, '+c.L+' late.'+(synced?' Synced to the school database.':' Saved on this device (database table not connected yet).'),'ok',4200);
+ const res=await window.sclNotifyBatch(list.map(s=>({email:s.pe,phone:s.pp,subject:'Attendance: '+s.name+' — '+when,text:'Dear Parent, '+s.name+' ('+rec.cls+') was marked '+full[marks[s.id]]+' — '+when+'. Shining Child Leaders School.'})),{kind:'attendance',summary:'Attendance '+rec.cls+' — '+when+': '+c.P+' present, '+c.A+' absent, '+c.L+' late, '+c.E+' excused.'});
  const bcc=list.filter(s=>s.pe).map(s=>s.pe).join(',');const body=encodeURIComponent('Attendance — '+rec.cls+' — '+when+'\n\n'+list.map(s=>s.name+': '+full[marks[s.id]]).join('\n'));
- const m=modal300('sclAttDone','<h3>✅ Saved — notify parents</h3><div class="scl300-stats"><div><b>'+c.P+'</b>Present</div><div><b>'+c.A+'</b>Absent</div><div><b>'+c.L+'</b>Late</div><div><b>'+c.E+'</b>Excused</div></div><div class="scl300-note">Notices were queued for every parent and for the school email <b>'+SCHOOL_EMAIL+'</b>. Automatic sending needs the school mail service on the server; until then use these buttons:</div><a class="scl300-cta" style="display:inline-block;text-decoration:none" href="mailto:'+SCHOOL_EMAIL+'?bcc='+encodeURIComponent(bcc)+'&subject='+encodeURIComponent('Attendance '+rec.cls+' '+when)+'&body='+body+'">📧 Email school + all parents</a><div style="margin-top:8px;overflow:auto"><table class="scl300-tbl"><tr><th>Student</th><th>Status</th><th>Send</th></tr>'+list.map(s=>'<tr><td>'+esc(s.name)+'</td><td>'+full[marks[s.id]]+'</td><td>'+(s.pp?'<a href="https://wa.me/'+String(s.pp).replace(/\D/g,'').replace(/^0/,'234')+'?text='+encodeURIComponent('Dear Parent, '+s.name+' ('+rec.cls+') was marked '+full[marks[s.id]]+' — '+when+'. Shining Child Leaders School.')+'" target="_blank" rel="noopener">💬 WhatsApp</a> ':'')+(s.pe?'<a href="mailto:'+esc(s.pe)+'?cc='+SCHOOL_EMAIL+'&subject='+encodeURIComponent('Attendance: '+s.name)+'&body='+encodeURIComponent('Dear Parent, '+s.name+' ('+rec.cls+') was marked '+full[marks[s.id]]+' — '+when+'.')+'">✉️ Email</a>':(s.pp?'':'<small>no contact</small>'))+'</td></tr>').join('')+'</table></div>')}
+ const m=modal300('sclAttDone','<h3>✅ Saved — notify parents</h3><div class="scl300-stats"><div><b>'+c.P+'</b>Present</div><div><b>'+c.A+'</b>Absent</div><div><b>'+c.L+'</b>Late</div><div><b>'+c.E+'</b>Excused</div></div><div class="scl300-note">'+(res.mode==='auto'?'Notices were <b>sent automatically</b> to '+res.sent+' parent contact(s) and the school email <b>'+SCHOOL_EMAIL+'</b>.':'Notices are saved in the Notification Outbox for every parent and the school email <b>'+SCHOOL_EMAIL+'</b>. Automatic sending is not connected on the server yet, so use these one-tap buttons:')+'</div><a class="scl300-cta" style="display:inline-block;text-decoration:none" href="mailto:'+SCHOOL_EMAIL+'?bcc='+encodeURIComponent(bcc)+'&subject='+encodeURIComponent('Attendance '+rec.cls+' '+when)+'&body='+body+'">📧 Email school + all parents</a><div style="margin-top:8px;overflow:auto"><table class="scl300-tbl"><tr><th>Student</th><th>Status</th><th>Send</th></tr>'+list.map(s=>'<tr><td>'+esc(s.name)+'</td><td>'+full[marks[s.id]]+'</td><td>'+(s.pp?'<a href="https://wa.me/'+String(s.pp).replace(/\D/g,'').replace(/^0/,'234')+'?text='+encodeURIComponent('Dear Parent, '+s.name+' ('+rec.cls+') was marked '+full[marks[s.id]]+' — '+when+'. Shining Child Leaders School.')+'" target="_blank" rel="noopener">💬 WhatsApp</a> ':'')+(s.pe?'<a href="mailto:'+esc(s.pe)+'?cc='+SCHOOL_EMAIL+'&subject='+encodeURIComponent('Attendance: '+s.name)+'&body='+encodeURIComponent('Dear Parent, '+s.name+' ('+rec.cls+') was marked '+full[marks[s.id]]+' — '+when+'.')+'">✉️ Email</a>':(s.pp?'':'<small>no contact</small>'))+'</td></tr>').join('')+'</table></div>')}
 function showQueue(){const q=LS('sclStuNotify',[]).slice(-60).reverse();modal300('sclQueue','<h3>🔔 Parent notice queue</h3><div class="scl300-note">Latest 60 notices. Each one also goes to '+SCHOOL_EMAIL+'.</div><div style="overflow:auto"><table class="scl300-tbl"><tr><th>When</th><th>Student</th><th>Notice</th></tr>'+(q.map(n=>'<tr><td>'+new Date(n.at).toLocaleString()+'</td><td>'+esc(n.student)+'</td><td>'+esc(n.msg)+'</td></tr>').join('')||'<tr><td colspan="3">Nothing queued yet.</td></tr>')+'</table></div>')}
 function expCsv(){const ros=roster(),rows=[['Date','Class','Period','Subject','Teacher','Student','Status']];Object.values(LS('sclStuAtt',{})).forEach(r=>Object.keys(r.marks||{}).forEach(id=>{const s=ros.find(x=>x.id===id);rows.push([r.date,r.cls,r.period,r.subject,r.teacher,s?s.name:id,r.marks[id]])}));const csv=rows.map(r=>r.map(x=>'"'+String(x==null?'':x).replace(/"/g,'""')+'"').join(',')).join('\n'),a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='student-attendance.csv';a.click();fb('Attendance exported as CSV.','ok')}
 /* ---------- self-test ---------- */
 window.sclSelfTest=function(){const rows=[];const seen=new Set();QA('.scl-acc-body button,#sclShortcutGrid button,.scl-suite-all-tools button,.scl-home-action-clean button,nav a[onclick]').forEach(b=>{const t=label(b),oc=b.getAttribute('onclick')||'';if(!oc||seen.has(t+oc))return;seen.add(t+oc);const names=(oc.match(/(?:^|[;{\s])([A-Za-z_$][\w$]*)\s*\(/g)||[]).map(x=>x.replace(/[;{\s(]/g,'')).filter(n=>!KW.has(n));const bad=names.filter(n=>typeof window[n]!=='function');rows.push([t,bad.length?'❌ missing: '+bad.join(', '):'✅ connected'])});
- const sys=[['Student attendance screen',typeof window.renderStudentAttendance==='function'],['School database connection',!!(sb()&&sb().auth)],['Biometrics (https + device)',bioOK()],['Camera available',!!(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia)]];
- const pend=['CBT & Online Tests — opens only a notice (no question/test builder yet)','Assignments & Assessment — opens only a notice','Lesson Notes / Plans — opens only a notice','Bulk Data / Excel — opens only a notice','Facebook & LinkedIn links — disabled until you supply the URLs','Automatic parent email/SMS — needs a server mail/SMS service (queue + one-tap send buttons are ready)'];
+ const sys=[['Student attendance screen',typeof window.renderStudentAttendance==='function'],['CBT / Assignments / Lesson notes / Bulk screens',typeof window.sclOpenCbt==='function'],['Notification outbox',typeof window.sclOpenOutbox==='function'],['School database connection',!!(sb()&&sb().auth)],['Biometrics (https + device)',bioOK()],['Camera available',!!(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia)]];
+ const pend=['Cloud sync, student attendance table and server-side user IDs — need the setup SQL run once in Supabase (scl_setup.sql)','Automatic parent email/SMS — needs the scl-notify server function deployed with your mail/SMS keys; until then the Notification Outbox gives one-tap send buttons','Facebook & LinkedIn links — disabled until you supply the URLs','Biometric sign-in — works on https with a phone/computer that has fingerprint or face unlock; set up once from your profile'];
  modal300('sclSelfTestModal','<h3>🧪 Function Self-Test</h3><div class="scl300-note">Checks that each button is wired to a working function on this page.</div><table class="scl300-tbl"><tr><th>Button</th><th>Result</th></tr>'+rows.map(r=>'<tr><td>'+esc(r[0])+'</td><td>'+r[1]+'</td></tr>').join('')+sys.map(s=>'<tr><td>'+s[0]+'</td><td>'+(s[1]?'✅ ready':'⚠️ not available')+'</td></tr>').join('')+'</table><h3 style="margin-top:14px">Sections still to build / automate</h3><ul style="font-size:13px;line-height:1.7">'+pend.map(p=>'<li>'+esc(p)+'</li>').join('')+'</ul>');fb('Self-test finished: '+rows.filter(r=>r[1][0]==='✅').length+' of '+rows.length+' buttons connected.','ok',3500)};
 /* ---------- boot ---------- */
 function tick(){try{installLogos();decorate();groupAll();enhanceProfile();bootReg();bioButtons();runAC()}catch(e){}}
 let t0=0;const mo=new MutationObserver(()=>{clearTimeout(t0);t0=setTimeout(tick,250)});
 function start(){tick();mo.observe(document.body,{childList:true,subtree:true});new MutationObserver(runAC).observe(document.body,{attributes:true,attributeFilter:['class']});[800,2500,6000].forEach(ms=>setTimeout(tick,ms))}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
+/* ====================== v301: notifications, cloud sync, CBT, assignments, lessons, bulk ====================== */
+const SUP=()=>window.SCL_SUPABASE_URL||'',PUBK=()=>window.SCL_SUPABASE_PUBLISHABLE_KEY||'';
+const K={cbt:'sclCBT',cba:'sclCBTAttempts',asg:'sclAssign',sub:'sclAssignSubs',les:'sclLessons',staff:'sclStaffRoster'};
+const SYNCK=[K.cbt,K.cba,K.asg,K.sub,K.les,K.staff];
+const arr=k=>{const v=LS(k,[]);return Array.isArray(v)?v:[]},live=k=>arr(k).filter(x=>!x.del);
+const nid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const v=id=>{const e=$(id);return e?String(e.value||'').trim():''};
+const CO=sel=>CLASSES.map(c=>'<option'+(c===sel?' selected':'')+'>'+c+'</option>').join('');
+let cloud='unknown';const pt={};
+function put(k,a){SV(k,a)}
+function upsert(k,item){const a=arr(k),i=a.findIndex(x=>x.id===item.id);item.u=Date.now();if(i>-1)a[i]=item;else a.push(item);put(k,a);return item}
+function remove(k,id){const a=arr(k),i=a.findIndex(x=>x.id===id);if(i>-1){a[i]={id,del:1,u:Date.now()};put(k,a)}}
+window.__sclPush=function(k){if(SYNCK.indexOf(k)<0)return;clearTimeout(pt[k]);pt[k]=setTimeout(async()=>{if(!sb()||!sb().from)return;window.__sclQuiet=(window.__sclQuiet||0)+1;try{const s=await sb().auth.getSession();if(!(s&&s.data&&s.data.session)){cloud='off';return}const r=await sb().from('scl_app_data').upsert({k:k,v:arr(k),updated_at:new Date().toISOString()},{onConflict:'k'});cloud=r.error?'off':'ok'}catch(e){cloud='off'}finally{window.__sclQuiet--}},1200)};
+function mergeArr(a,b){const m=new Map();[].concat(a||[],b||[]).forEach(x=>{if(!x||x.id==null)return;const o=m.get(x.id);if(!o||(x.u||0)>=(o.u||0))m.set(x.id,x)});return[...m.values()]}
+window.sclSync=async function(quiet){if(!sb()||!sb().from){cloud='off';return false}window.__sclQuiet=(window.__sclQuiet||0)+1;let ok=true;try{const s=await sb().auth.getSession();if(!(s&&s.data&&s.data.session)){cloud='off';if(!quiet)fb('Sign in first to sync with the school database.','warn');return false}
+ for(const k of SYNCK){const r=await sb().from('scl_app_data').select('v').eq('k',k).maybeSingle();if(r.error){ok=false;break}const merged=mergeArr(arr(k),r.data&&r.data.v);const same=JSON.stringify(merged)===JSON.stringify(arr(k));SV(k,merged);if(!r.data||JSON.stringify(r.data.v)!==JSON.stringify(merged))await sb().from('scl_app_data').upsert({k,v:merged,updated_at:new Date().toISOString()},{onConflict:'k'})}
+ cloud=ok?'ok':'off'}catch(e){ok=false;cloud='off'}finally{window.__sclQuiet--}
+ if(!quiet)fb(ok?'Synced with the school database ✔':'School database tables are not set up yet — data stays on this device. Run the SQL file once to enable sync.',ok?'ok':'warn',4200);return ok};
+function cloudBar(){return '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:11px;margin-bottom:6px"><span>'+(cloud==='ok'?'☁️ Synced to the school database':'💾 Saved on this device'+(cloud==='off'?' — cloud sync not set up':''))+'</span><button type="button" data-act="sync" style="border:0;background:#f3e9ff;color:#4a148c;border-radius:10px;padding:5px 9px;font-weight:700;cursor:pointer">🔄 Sync now</button></div>'}
+/* ---------- notifications (auto via server function, else outbox + one-tap) ---------- */
+const norm234=p=>String(p||'').replace(/\D/g,'').replace(/^0/,'234');
+window.sclNotifyBatch=async function(msgs,opts){opts=opts||{};msgs=(msgs||[]).filter(m=>m&&(m.email||m.phone));const ob=LS('sclOutbox',[]);const ids=[];
+ msgs.forEach(m=>{const e={id:nid(),at:Date.now(),kind:opts.kind||'notice',email:m.email||'',phone:m.phone||'',subject:m.subject||'School notice',text:m.text||'',status:'queued'};ob.push(e);ids.push(e.id)});
+ ob.push({id:nid(),at:Date.now(),kind:(opts.kind||'notice')+'-school',email:SCHOOL_EMAIL,phone:'',subject:'[Copy] '+(opts.summary||msgs.length+' notice(s)'),text:(opts.summary||'')+'\n\n'+msgs.map(m=>m.text).join('\n'),status:'queued'});ids.push(ob[ob.length-1].id);
+ let mode='manual',sent=0;const down=+sessionStorage.getItem('sclNotifyDown')||0;
+ if(SUP()&&window.__sclRawFetch&&Date.now()-down>600000){try{const s=await sb().auth.getSession(),tok=s&&s.data&&s.data.session&&s.data.session.access_token;if(tok){const r=await window.__sclRawFetch(SUP()+'/functions/v1/scl-notify',{method:'POST',headers:{'Content-Type':'application/json',apikey:PUBK(),Authorization:'Bearer '+tok},body:JSON.stringify({school_email:SCHOOL_EMAIL,summary:opts.summary||'',messages:msgs.map(m=>({email:m.email||'',phone:m.phone||'',subject:m.subject||'School notice',text:m.text||''}))})});const d=await r.json().catch(()=>({}));if(r.ok&&d&&d.ok){mode='auto';sent=(d.sent&&(d.sent.email+d.sent.sms))||msgs.length}else sessionStorage.setItem('sclNotifyDown',String(Date.now()))}}catch(e){sessionStorage.setItem('sclNotifyDown',String(Date.now()))}}
+ if(mode==='auto')ob.forEach(e=>{if(ids.indexOf(e.id)>-1)e.status='sent'});SV('sclOutbox',ob.slice(-2000));return{mode,sent,queued:mode==='auto'?0:msgs.length}};
+window.sclOpenOutbox=function(){const ob=LS('sclOutbox',[]).slice().reverse(),q=ob.filter(x=>x.status==='queued');
+ const h='<h3>📨 Notification Outbox</h3><div class="scl300-note">'+(q.length?'<b>'+q.length+'</b> waiting to be sent. Automatic sending needs the <code>scl-notify</code> server function (see the setup file); until then use the buttons.':'Nothing is waiting. ✔')+' Every notice is also copied to <b>'+SCHOOL_EMAIL+'</b>.</div><div class="scl300-stats"><div><b>'+ob.filter(x=>x.status==='sent').length+'</b>Sent</div><div><b>'+q.length+'</b>Waiting</div><div><b>'+ob.length+'</b>Total</div><div><b>'+(+sessionStorage.getItem("sclNotifyDown")?'Manual':'Auto')+'</b>Mode</div></div><button class="scl300-cta" data-o="retry" type="button">🔁 Retry automatic send</button><a class="scl300-cta alt" style="display:inline-block;text-decoration:none" href="mailto:'+SCHOOL_EMAIL+'?bcc='+encodeURIComponent(q.map(x=>x.email).filter(e=>e&&e!==SCHOOL_EMAIL).filter((e,i,a)=>a.indexOf(e)===i).join(','))+'&subject='+encodeURIComponent('School notice')+'">📧 Email all waiting</a><button class="scl300-cta warn" data-o="clear" type="button">🧹 Clear sent</button><div style="overflow:auto;margin-top:8px"><table class="scl300-tbl"><tr><th>When</th><th>To</th><th>Message</th><th>Status</th><th>Send</th></tr>'+(ob.slice(0,80).map(x=>'<tr><td>'+new Date(x.at).toLocaleString()+'</td><td>'+esc(x.email||x.phone)+'</td><td><b>'+esc(x.subject)+'</b><br><small>'+esc(String(x.text).slice(0,140))+'</small></td><td>'+(x.status==='sent'?'✅ sent':'⏳ waiting')+'</td><td>'+(x.status==='sent'?'':(x.phone?'<a href="https://wa.me/'+norm234(x.phone)+'?text='+encodeURIComponent(x.text)+'" target="_blank" rel="noopener">💬</a> ':'')+(x.email?'<a href="mailto:'+esc(x.email)+'?cc='+SCHOOL_EMAIL+'&subject='+encodeURIComponent(x.subject)+'&body='+encodeURIComponent(x.text)+'">✉️</a> ':'')+'<button type="button" data-o="done" data-id="'+x.id+'" style="border:0;background:#e6f7ec;border-radius:8px;padding:3px 7px;cursor:pointer" title="Mark sent">✔</button>')+'</td></tr>').join('')||'<tr><td colspan="5">No notices yet.</td></tr>')+'</table></div>';
+ const m=modal300('sclOutboxModal',h);m.onclick=async function(e){if(e.target===m||e.target.closest('[data-x]')){m.classList.remove('open');return}const t=e.target.closest('[data-o]');if(!t)return;const a=t.dataset.o,all=LS('sclOutbox',[]);
+  if(a==='done'){const x=all.find(y=>y.id===t.dataset.id);if(x)x.status='sent';SV('sclOutbox',all);fb('Marked as sent.','ok');window.sclOpenOutbox()}
+  if(a==='clear'){SV('sclOutbox',all.filter(x=>x.status!=='sent'));fb('Sent notices cleared.','ok');window.sclOpenOutbox()}
+  if(a==='retry'){sessionStorage.removeItem('sclNotifyDown');const w=all.filter(x=>x.status==='queued'&&x.kind.indexOf('-school')<0);if(!w.length){fb('Nothing waiting to send.','info');return}fb('Trying to send '+w.length+' notice(s)…','info',1500);SV('sclOutbox',all.filter(x=>x.status!=='queued'));const r=await window.sclNotifyBatch(w.map(x=>({email:x.email,phone:x.phone,subject:x.subject,text:x.text})),{kind:'retry',summary:'Retry of '+w.length+' notice(s)'});fb(r.mode==='auto'?'Sent automatically ✔':'Automatic sending is still not connected — use the ✉️/💬 buttons.',r.mode==='auto'?'ok':'warn',3500);window.sclOpenOutbox()}}};
+function contactOf(name,cls){const n=String(name||'').toLowerCase().trim();return(LS('sclStuRoster',[])).find(s=>s.name.toLowerCase()===n&&(!cls||String(s.cls).toLowerCase()===String(cls).toLowerCase()))||null}
+/* ---------- shared UI helpers ---------- */
+function modeBar(){const m=LS('sclMode','staff'),on='background:#7b4dff;color:#fff;border-color:#7b4dff';return '<div class="scl300-chips" style="margin-bottom:8px"><button type="button" data-act="mode" data-v="staff" style="'+(m==='staff'?on:'')+'">👩‍🏫 Teacher / Admin</button><button type="button" data-act="mode" data-v="student" style="'+(m==='student'?on:'')+'">🧒 Student</button></div>'}
+function shell(html,H){const b=$('sclSuiteBody');if(!b)return;b.innerHTML='<div style="color:#14061f" data-scl-keep>'+cloudBar()+html+'</div>';b.onclick=e=>{const t=e.target.closest('[data-act]');if(!t||!b.contains(t))return;const f=H[t.dataset.act];if(f)f(t,e)};b.onchange=e=>{const t=e.target.closest('[data-chg]');if(t&&H[t.dataset.chg])setTimeout(()=>{try{H[t.dataset.chg](t,e)}catch(err){fb('Something went wrong: '+(err&&err.message),'err')}},0)}}
+const baseH=redraw=>({mode:t=>{SV('sclMode',t.dataset.v);redraw()},sync:async()=>{await window.sclSync();redraw()}});
+function csvOut(name,rows){const csv=rows.map(r=>r.map(x=>'"'+String(x==null?'':x).replace(/"/g,'""')+'"').join(',')).join('\n'),a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv'}));a.download=name;a.click();fb(name+' downloaded.','ok')}
+function parseCSV(t){const rows=[];let r=[],c='',q=false;t=String(t).replace(/^\ufeff/,'');for(let i=0;i<t.length;i++){const ch=t[i];if(q){if(ch==='"'){if(t[i+1]==='"'){c+='"';i++}else q=false}else c+=ch}else if(ch==='"')q=true;else if(ch===','||ch==='\t'||ch===';'){r.push(c);c=''}else if(ch==='\n'||ch==='\r'){if(ch==='\r'&&t[i+1]==='\n')i++;r.push(c);c='';if(r.some(x=>String(x).trim()!==''))rows.push(r);r=[]}else c+=ch}r.push(c);if(r.some(x=>String(x).trim()!==''))rows.push(r);return rows}
+const ctab=(list,cur,act)=>'<div class="scl300-chips" style="margin-bottom:10px">'+list.map(t=>'<button type="button" data-act="'+act+'" data-v="'+t[0]+'" style="'+(cur===t[0]?'background:#7b4dff;color:#fff;border-color:#7b4dff':'')+'">'+t[1]+'</button>').join('')+'</div>';
+const ratio=(a,b)=>b?Math.round(a/b*100):0;
+/* ---------- CBT ---------- */
+const CB={view:'list',draft:null,run:null,sc:{cls:'Primary 1',name:''},last:null,rid:null};
+function cbtRender(){clearInterval(window.__cbtT);const m=LS('sclMode','staff');const H=Object.assign(baseH(cbtRender),CBH);shell(modeBar()+(m==='student'?cbtStudent():cbtStaff()),H);if(CB.run&&m==='student')tickTimer()}
+function cbtStaff(){if(CB.view==='edit')return cbtEdit();if(CB.view==='results')return cbtResults();const tests=live(K.cbt),at=live(K.cba);
+ let h='<div class="scl300-note">Create a test, <b>publish</b> it, then students sit it in <b>Student</b> mode. Scores are marked automatically and parents are notified.</div><button class="scl300-cta" data-act="cb-new" type="button">➕ New test</button>';
+ h+='<div style="overflow:auto"><table class="scl300-tbl"><tr><th>Test</th><th>Class</th><th>Qs</th><th>Min</th><th>Taken</th><th>Status</th><th></th></tr>'+(tests.map(t=>'<tr><td><b>'+esc(t.title)+'</b><br><small>'+esc(t.subject||'')+'</small></td><td>'+esc(t.cls)+'</td><td>'+t.qs.length+'</td><td>'+t.mins+'</td><td>'+at.filter(a=>a.tid===t.id).length+'</td><td>'+(t.pub?'🟢 Live':'⚪ Draft')+'</td><td style="white-space:nowrap"><button data-act="cb-edit" data-id="'+t.id+'" type="button">✏️</button> <button data-act="cb-pub" data-id="'+t.id+'" type="button">'+(t.pub?'⏸':'🚀')+'</button> <button data-act="cb-res" data-id="'+t.id+'" type="button">📊</button> <button data-act="cb-del" data-id="'+t.id+'" type="button">🗑</button></td></tr>').join('')||'<tr><td colspan="7">No tests yet — tap “New test”.</td></tr>')+'</table></div>';return h}
+function blankQ(){return{q:'',o:['','','',''],a:0}}
+function cbtEdit(){const d=CB.draft;let h='<h4 style="margin:0 0 6px">'+(d.u?'Edit':'New')+' test</h4><div class="scl300-row"><div><label>Title *</label><input id="cb-title" value="'+esc(d.title)+'"></div><div><label>Subject</label><input id="cb-sub" value="'+esc(d.subject)+'"></div></div><div class="scl300-row3"><div><label>Class *</label><select id="cb-cls">'+CO(d.cls)+'</select></div><div><label>Minutes</label><input id="cb-min" type="number" min="1" value="'+d.mins+'"></div><div><label>Pass mark %</label><input id="cb-pass" type="number" min="1" max="100" value="'+d.pass+'"></div></div><label style="display:flex;gap:8px;align-items:center"><input id="cb-shuf" type="checkbox" style="width:auto"'+(d.shuffle?' checked':'')+'> Shuffle question order</label>';
+ d.qs.forEach((q,i)=>{h+='<div data-qi="'+i+'" style="border:2px solid #eadcff;border-radius:14px;padding:10px;margin:8px 0"><b>Question '+(i+1)+'</b> <button type="button" data-act="cb-qdel" data-i="'+i+'" style="float:right;border:0;background:#ffe3e3;border-radius:8px;cursor:pointer">🗑</button><textarea data-qf="q" rows="2" placeholder="Type the question">'+esc(q.q)+'</textarea><div class="scl300-row">'+[0,1,2,3].map(k=>'<div><label>Option '+'ABCD'[k]+'</label><input data-qf="o'+k+'" value="'+esc(q.o[k])+'"></div>').join('')+'</div><label>Correct answer</label><select data-qf="a">'+[0,1,2,3].map(k=>'<option value="'+k+'"'+(q.a===k?' selected':'')+'>'+'ABCD'[k]+'</option>').join('')+'</select></div>'});
+ h+='<button class="scl300-cta alt" data-act="cb-qadd" type="button">➕ Add question</button><details style="margin-top:8px"><summary><b>📋 Paste many questions</b></summary><textarea id="cb-paste" rows="6" placeholder="1. What is 2+2?\nA) 3\nB) 4\nC) 5\nD) 6\nANS: B"></textarea><button class="scl300-cta" data-act="cb-paste" type="button">Add pasted questions</button></details><div style="margin-top:10px"><button class="scl300-cta" data-act="cb-save" type="button">💾 Save test</button><button class="scl300-cta warn" data-act="cb-cancel" type="button">Cancel</button></div>';return h}
+function readDraft(){const d=CB.draft;if(!d||!$('cb-title'))return;d.title=v('cb-title');d.subject=v('cb-sub');d.cls=v('cb-cls');d.mins=+v('cb-min')||20;d.pass=+v('cb-pass')||50;d.shuffle=$('cb-shuf').checked;QA('[data-qi]').forEach(c=>{const q=d.qs[+c.dataset.qi];if(!q)return;q.q=Q('[data-qf=q]',c).value;for(let k=0;k<4;k++)q.o[k]=Q('[data-qf=o'+k+']',c).value;q.a=+Q('[data-qf=a]',c).value})}
+function parseQs(text){const out=[];let cur=null;String(text).split(/\r?\n/).forEach(l=>{l=l.trim();if(!l)return;let m;if(m=l.match(/^(?:Q\s*\d*\s*[:.)]|\d+\s*[.)])\s*(.+)/i)){cur={q:m[1],o:['','','',''],a:0};out.push(cur)}else if(cur&&(m=l.match(/^\(?([A-D])\s*[).:]\s*(.+)/i))){cur.o['ABCD'.indexOf(m[1].toUpperCase())]=m[2]}else if(cur&&(m=l.match(/^(?:ANS|ANSWER|CORRECT)\s*[:=]?\s*\(?([A-D])/i))){cur.a='ABCD'.indexOf(m[1].toUpperCase())}else if(cur&&!cur.o.some(Boolean)){cur.q+=' '+l}});return out.filter(q=>q.q&&q.o.filter(Boolean).length>=2)}
+function cbtResults(){const t=live(K.cbt).find(x=>x.id===CB.rid);if(!t)return'<div class="scl300-note">Test not found.</div>';const at=live(K.cba).filter(a=>a.tid===t.id).sort((a,b)=>b.pct-a.pct),avg=at.length?Math.round(at.reduce((s,a)=>s+a.pct,0)/at.length):0;
+ return '<button class="scl300-cta warn" data-act="cb-back" type="button">⬅ Back</button><h4>'+esc(t.title)+' — results</h4><div class="scl300-stats"><div><b>'+at.length+'</b>Attempts</div><div><b>'+avg+'%</b>Average</div><div><b>'+(at[0]?at[0].pct+'%':'—')+'</b>Highest</div><div><b>'+ratio(at.filter(a=>a.pct>=t.pass).length,at.length)+'%</b>Passed</div></div><button class="scl300-cta alt" data-act="cb-csv" type="button">📤 Export CSV</button><div style="overflow:auto"><table class="scl300-tbl"><tr><th>#</th><th>Student</th><th>Score</th><th>%</th><th>Result</th><th>When</th></tr>'+(at.map((a,i)=>'<tr><td>'+(i+1)+'</td><td>'+esc(a.name)+'</td><td>'+a.score+'/'+a.total+'</td><td>'+a.pct+'%</td><td>'+(a.pct>=t.pass?'✅ Pass':'❌ Fail')+'</td><td>'+new Date(a.at).toLocaleString()+'</td></tr>').join('')||'<tr><td colspan="6">No one has taken this test yet.</td></tr>')+'</table></div>'}
+function cbtStudent(){const S=CB.sc;if(CB.run)return cbtRun();if(CB.last)return cbtDone();const tests=live(K.cbt).filter(t=>t.pub&&t.cls===S.cls),ros=LS('sclStuRoster',[]).filter(s=>s.cls===S.cls);
+ return '<div class="scl300-note">Pick your class, type your name, then choose a test. The timer starts when you press Start and the test submits itself at zero.</div><div class="scl300-row"><div><label>Class</label><select id="cs-cls" data-chg="cb-cls">'+CO(S.cls)+'</select></div><div><label>Your full name</label><input id="cs-name" list="cs-dl" value="'+esc(S.name)+'" autocomplete="off"><datalist id="cs-dl">'+ros.map(s=>'<option value="'+esc(s.name)+'">').join('')+'</datalist></div></div>'+(tests.map(t=>{const done=live(K.cba).find(a=>a.tid===t.id&&S.name&&a.name.toLowerCase()===S.name.toLowerCase());return'<div style="border:2px solid #eadcff;border-radius:14px;padding:12px;margin:8px 0"><b>'+esc(t.title)+'</b> <small>'+esc(t.subject||'')+'</small><br><small>'+t.qs.length+' questions · '+t.mins+' min · pass '+t.pass+'%</small><br><button class="scl300-cta" data-act="cb-start" data-id="'+t.id+'" type="button">▶ Start test</button></div>'}).join('')||'<div class="scl300-note">No live tests for '+esc(S.cls)+' right now.</div>')}
+function cbtRun(){const r=CB.run,t=r.t;let h='<div style="position:sticky;top:0;z-index:5;background:#4a148c;color:#fff;border-radius:12px;padding:8px 12px;display:flex;justify-content:space-between" data-scl-keep><b>'+esc(t.title)+'</b><b id="cb-timer">--:--</b></div>';
+ r.order.forEach((qi,n)=>{const q=t.qs[qi];h+='<div style="border:2px solid #eadcff;border-radius:14px;padding:10px;margin:8px 0"><b>'+(n+1)+'. '+esc(q.q)+'</b>'+[0,1,2,3].filter(k=>q.o[k]).map(k=>'<label style="display:flex;gap:8px;align-items:center;font-weight:600;font-size:14px;margin:6px 0"><input type="radio" name="q'+qi+'" style="width:auto" data-chg="cb-ans" data-q="'+qi+'" data-o="'+k+'"'+(r.ans[qi]===k?' checked':'')+'> '+'ABCD'[k]+'. '+esc(q.o[k])+'</label>').join('')+'</div>'});
+ return h+'<button class="scl300-cta" data-act="cb-submit" type="button">✅ Submit test</button>'}
+function tickTimer(){const r=CB.run;if(!r)return;const el=()=>$('cb-timer');const f=()=>{const left=Math.max(0,Math.round((r.end-Date.now())/1000));const e=el();if(e){e.textContent=String(Math.floor(left/60)).padStart(2,'0')+':'+String(left%60).padStart(2,'0');if(left<60)e.style.color='#ffd33d'}if(left<=0){clearInterval(window.__cbtT);fb('Time is up — submitting your test.','warn');submitCbt()}};f();window.__cbtT=setInterval(f,1000)}
+function submitCbt(){const r=CB.run;if(!r)return;clearInterval(window.__cbtT);const t=r.t;let score=0;t.qs.forEach((q,i)=>{if(r.ans[i]===q.a)score++});const total=t.qs.length,pct=ratio(score,total);const a={id:nid(),tid:t.id,name:r.name,cls:t.cls,ans:r.ans,score,total,pct,at:Date.now()};upsert(K.cba,a);CB.run=null;CB.last={a,t};
+ const c=contactOf(r.name,t.cls);if(c&&(c.pe||c.pp))window.sclNotifyBatch([{email:c.pe,phone:c.pp,subject:'Test result: '+r.name,text:'Dear Parent, '+r.name+' ('+t.cls+') scored '+score+'/'+total+' ('+pct+'%) in "'+t.title+'". '+(pct>=t.pass?'Passed':'Below pass mark')+'. Shining Child Leaders School.'}],{kind:'cbt',summary:r.name+' — '+t.title+': '+pct+'%'});
+ fb('Test submitted: '+score+'/'+total+' ('+pct+'%).','ok',3500);cbtRender()}
+function cbtDone(){const {a,t}=CB.last;return '<div class="scl300-stats"><div><b>'+a.score+'/'+a.total+'</b>Score</div><div><b>'+a.pct+'%</b>Percent</div><div><b>'+(a.pct>=t.pass?'Pass':'Fail')+'</b>Result</div><div><b>'+esc(a.name.split(' ')[0])+'</b>Student</div></div><div style="overflow:auto">'+t.qs.map((q,i)=>{const ok=a.ans[i]===q.a;return'<div style="padding:8px;margin:6px 0;border-radius:12px;background:'+(ok?'#e6f7ec':'#ffe9e9')+'"><b>'+(i+1)+'. '+esc(q.q)+'</b><br>'+(ok?'✅ ':'❌ Your answer: '+(a.ans[i]==null?'none':'ABCD'[a.ans[i]]+'. '+esc(q.o[a.ans[i]]))+' — ')+'Correct: <b>'+'ABCD'[q.a]+'. '+esc(q.o[q.a])+'</b></div>'}).join('')+'</div><button class="scl300-cta" data-act="cb-finish" type="button">Done</button>'}
+const CBH={
+ 'cb-new':()=>{CB.draft={id:nid(),title:'',subject:'',cls:'Primary 1',mins:20,pass:50,shuffle:false,pub:false,qs:[blankQ()]};CB.view='edit';cbtRender()},
+ 'cb-edit':t=>{CB.draft=JSON.parse(JSON.stringify(live(K.cbt).find(x=>x.id===t.dataset.id)));CB.view='edit';cbtRender()},
+ 'cb-cancel':()=>{CB.view='list';CB.draft=null;cbtRender()},'cb-back':()=>{CB.view='list';cbtRender()},
+ 'cb-qadd':()=>{readDraft();CB.draft.qs.push(blankQ());cbtRender()},'cb-qdel':t=>{readDraft();CB.draft.qs.splice(+t.dataset.i,1);if(!CB.draft.qs.length)CB.draft.qs.push(blankQ());cbtRender()},
+ 'cb-paste':()=>{readDraft();const qs=parseQs(v('cb-paste')+'');if(!qs.length){fb('No questions found. Use: 1. Question / A) … / ANS: B','err');return}if(CB.draft.qs.length===1&&!CB.draft.qs[0].q)CB.draft.qs=[];CB.draft.qs=CB.draft.qs.concat(qs);fb(qs.length+' question(s) added.','ok');cbtRender()},
+ 'cb-save':()=>{readDraft();const d=CB.draft;if(!d.title){fb('Give the test a title.','err');return}const bad=d.qs.findIndex(q=>!q.q.trim()||q.o.filter(x=>x.trim()).length<2||!q.o[q.a].trim());if(bad>-1){fb('Question '+(bad+1)+' needs text, at least two options and a filled correct option.','err');return}upsert(K.cbt,d);CB.view='list';CB.draft=null;fb('Test saved ✔ — tap 🚀 to make it live for students.','ok',3500);cbtRender()},
+ 'cb-pub':t=>{const x=live(K.cbt).find(y=>y.id===t.dataset.id);x.pub=!x.pub;upsert(K.cbt,x);fb(x.pub?'Test is LIVE for '+x.cls+' students.':'Test is back to draft.','ok');cbtRender()},
+ 'cb-del':t=>{if(!confirm('Delete this test and keep its results?'))return;remove(K.cbt,t.dataset.id);fb('Test deleted.','ok');cbtRender()},
+ 'cb-res':t=>{CB.rid=t.dataset.id;CB.view='results';cbtRender()},
+ 'cb-csv':()=>{const t=live(K.cbt).find(x=>x.id===CB.rid);csvOut((t.title||'test').replace(/\W+/g,'_')+'-results.csv',[['Student','Class','Score','Total','Percent','Result','When']].concat(live(K.cba).filter(a=>a.tid===t.id).map(a=>[a.name,a.cls,a.score,a.total,a.pct,a.pct>=t.pass?'Pass':'Fail',new Date(a.at).toISOString()])))},
+ 'cb-cls':t=>{CB.sc.cls=t.value;CB.sc.name=v('cs-name');cbtRender()},
+ 'cb-start':t=>{CB.sc.name=v('cs-name');CB.sc.cls=v('cs-cls')||CB.sc.cls;if(CB.sc.name.length<2){fb('Type your full name first.','err');return}const te=live(K.cbt).find(x=>x.id===t.dataset.id);const prev=live(K.cba).find(a=>a.tid===te.id&&a.name.toLowerCase()===CB.sc.name.toLowerCase());if(prev){CB.last={a:prev,t:te};fb('You already took this test — here is your result.','warn');cbtRender();return}let order=te.qs.map((_,i)=>i);if(te.shuffle)order.sort(()=>Math.random()-.5);CB.run={t:te,order,ans:{},name:CB.sc.name,end:Date.now()+te.mins*60000};fb('Test started — good luck! ⏱','info');cbtRender()},
+ 'cb-ans':t=>{CB.run.ans[+t.dataset.q]=+t.dataset.o},
+ 'cb-submit':()=>{const r=CB.run,left=r.t.qs.length-Object.keys(r.ans).length;if(left>0&&!confirm(left+' question(s) not answered. Submit anyway?'))return;submitCbt()},
+ 'cb-finish':()=>{CB.last=null;CB.sc.name='';cbtRender()}};
+/* ---------- ASSIGNMENTS ---------- */
+const AS={view:'list',draft:null,sid:null,sc:{cls:'Primary 1',name:''},file:null,subj:null};
+function asgRender(){const m=LS('sclMode','staff');shell(modeBar()+(m==='student'?asgStudent():asgStaff()),Object.assign(baseH(asgRender),ASH))}
+function asgStaff(){if(AS.view==='new')return asgForm();if(AS.view==='subs')return asgSubs();const L=live(K.asg),S=live(K.sub);
+ return '<div class="scl300-note">Post work for a class, collect submissions, then grade. Parents are notified when work is posted and when it is graded.</div><button class="scl300-cta" data-act="as-new" type="button">➕ New assignment</button><div style="overflow:auto"><table class="scl300-tbl"><tr><th>Title</th><th>Class</th><th>Due</th><th>Subs</th><th></th></tr>'+(L.sort((a,b)=>b.u-a.u).map(a=>'<tr><td><b>'+esc(a.title)+'</b><br><small>'+esc(a.subject||'')+'</small></td><td>'+esc(a.cls)+'</td><td>'+esc(a.due||'—')+'</td><td>'+S.filter(s=>s.aid===a.id).length+'</td><td style="white-space:nowrap"><button data-act="as-subs" data-id="'+a.id+'" type="button">📥</button> <button data-act="as-del" data-id="'+a.id+'" type="button">🗑</button></td></tr>').join('')||'<tr><td colspan="5">No assignments yet.</td></tr>')+'</table></div>'}
+function asgForm(){const d=AS.draft;return '<h4>New assignment</h4><div class="scl300-row"><div><label>Title *</label><input id="as-title" value="'+esc(d.title)+'"></div><div><label>Subject</label><input id="as-sub" value="'+esc(d.subject)+'"></div></div><div class="scl300-row3"><div><label>Class *</label><select id="as-cls">'+CO(d.cls)+'</select></div><div><label>Due date</label><input id="as-due" type="date" value="'+esc(d.due)+'"></div><div><label>Max score</label><input id="as-max" type="number" min="1" value="'+d.max+'"></div></div><label>Instructions *</label><textarea id="as-ins" rows="4">'+esc(d.ins)+'</textarea><button class="scl300-cta" data-act="as-save" type="button">📣 Post assignment</button><button class="scl300-cta warn" data-act="as-back" type="button">Cancel</button>'}
+function asgSubs(){const a=live(K.asg).find(x=>x.id===AS.sid);if(!a)return'';const S=live(K.sub).filter(s=>s.aid===a.id);return '<button class="scl300-cta warn" data-act="as-back" type="button">⬅ Back</button><h4>'+esc(a.title)+' — submissions ('+S.length+')</h4><button class="scl300-cta alt" data-act="as-csv" type="button">📤 Export grades</button><div style="overflow:auto">'+(S.map(s=>'<div style="border:2px solid #eadcff;border-radius:14px;padding:10px;margin:8px 0"><b>'+esc(s.name)+'</b> <small>'+new Date(s.at).toLocaleString()+(a.due&&new Date(s.at)>new Date(a.due+'T23:59:59')?' · ⏰ late':'')+'</small><p style="white-space:pre-wrap;margin:6px 0">'+esc(s.text||'(no text)')+'</p>'+(s.file?'<a href="'+s.file.data+'" download="'+esc(s.file.name)+'">📎 '+esc(s.file.name)+'</a>':'')+'<div class="scl300-row"><div><label>Score /'+a.max+'</label><input id="gs-'+s.id+'" type="number" min="0" max="'+a.max+'" value="'+(s.score==null?'':s.score)+'"></div><div><label>Feedback</label><input id="gf-'+s.id+'" value="'+esc(s.fb||'')+'"></div></div><button class="scl300-cta" data-act="as-grade" data-id="'+s.id+'" type="button">💾 Save grade</button></div>').join('')||'<div class="scl300-note">No submissions yet.</div>')+'</div>'}
+function asgStudent(){const S=AS.sc;if(AS.view==='submit')return asgSubmitForm();const ros=LS('sclStuRoster',[]).filter(s=>s.cls===S.cls),L=live(K.asg).filter(a=>a.cls===S.cls);
+ return '<div class="scl300-row"><div><label>Class</label><select id="ss-cls" data-chg="as-cls">'+CO(S.cls)+'</select></div><div><label>Your full name</label><input id="ss-name" list="ss-dl" value="'+esc(S.name)+'" data-chg="as-name"><datalist id="ss-dl">'+ros.map(s=>'<option value="'+esc(s.name)+'">').join('')+'</datalist></div></div>'+(L.map(a=>{const sub=live(K.sub).find(s=>s.aid===a.id&&S.name&&s.name.toLowerCase()===S.name.toLowerCase());return'<div style="border:2px solid #eadcff;border-radius:14px;padding:12px;margin:8px 0"><b>'+esc(a.title)+'</b> <small>'+esc(a.subject||'')+'</small><p style="margin:4px 0;font-size:13px;white-space:pre-wrap">'+esc(a.ins)+'</p><small>Due '+esc(a.due||'—')+' · max '+a.max+'</small><br>'+(sub&&sub.score!=null?'<div class="scl300-note">✅ Graded: <b>'+sub.score+'/'+a.max+'</b>'+(sub.fb?' — '+esc(sub.fb):'')+'</div>':sub?'<div class="scl300-note">📨 Submitted — waiting for grading.</div>':'')+'<button class="scl300-cta" data-act="as-open" data-id="'+a.id+'" type="button">'+(sub?'✏️ Resubmit':'📤 Submit work')+'</button></div>'}).join('')||'<div class="scl300-note">No assignments for '+esc(S.cls)+' yet.</div>')}
+function asgSubmitForm(){const a=live(K.asg).find(x=>x.id===AS.sid);return '<button class="scl300-cta warn" data-act="as-back" type="button">⬅ Back</button><h4>'+esc(a.title)+'</h4><p style="font-size:13px;white-space:pre-wrap">'+esc(a.ins)+'</p><label>Your answer</label><textarea id="as-text" rows="6">'+esc(AS.subj&&AS.subj.text||'')+'</textarea><label>Attach a photo or small file (optional, up to ~150 KB; photos are compressed)</label><input type="file" id="as-file" data-chg="as-file"><div id="as-fn" style="font-size:12px">'+(AS.file?'📎 '+esc(AS.file.name):'')+'</div><button class="scl300-cta" data-act="as-send" type="button">📤 Submit</button>'}
+const ASH={
+ 'as-new':()=>{AS.draft={id:nid(),title:'',subject:'',cls:'Primary 1',due:'',max:10,ins:''};AS.view='new';asgRender()},'as-back':()=>{AS.view='list';AS.file=null;asgRender()},
+ 'as-save':()=>{const d=AS.draft;d.title=v('as-title');d.subject=v('as-sub');d.cls=v('as-cls');d.due=v('as-due');d.max=+v('as-max')||10;d.ins=v('as-ins');if(!d.title||!d.ins){fb('Add a title and instructions.','err');return}upsert(K.asg,d);const ps=LS('sclStuRoster',[]).filter(s=>s.cls===d.cls&&(s.pe||s.pp));if(ps.length)window.sclNotifyBatch(ps.map(s=>({email:s.pe,phone:s.pp,subject:'New assignment: '+d.title,text:'Dear Parent, a new assignment "'+d.title+'" ('+(d.subject||'')+') has been posted for '+d.cls+(d.due?', due '+d.due:'')+'. Shining Child Leaders School.'})),{kind:'assignment',summary:'New assignment for '+d.cls+': '+d.title});fb('Assignment posted ✔'+(ps.length?' — '+ps.length+' parent notice(s) queued.':''),'ok',3500);AS.view='list';asgRender()},
+ 'as-del':t=>{if(!confirm('Delete this assignment?'))return;remove(K.asg,t.dataset.id);fb('Assignment deleted.','ok');asgRender()},
+ 'as-subs':t=>{AS.sid=t.dataset.id;AS.view='subs';asgRender()},
+ 'as-grade':t=>{const s=live(K.sub).find(x=>x.id===t.dataset.id),a=live(K.asg).find(x=>x.id===s.aid),sc=v('gs-'+s.id);if(sc===''||isNaN(+sc)||+sc<0||+sc>a.max){fb('Enter a score between 0 and '+a.max+'.','err');return}s.score=+sc;s.fb=v('gf-'+s.id);upsert(K.sub,s);const c=contactOf(s.name,a.cls);if(c&&(c.pe||c.pp))window.sclNotifyBatch([{email:c.pe,phone:c.pp,subject:'Assignment graded: '+s.name,text:'Dear Parent, '+s.name+' scored '+s.score+'/'+a.max+' in "'+a.title+'". '+(s.fb?'Teacher: '+s.fb+'. ':'')+'Shining Child Leaders School.'}],{kind:'grade',summary:s.name+' — '+a.title+': '+s.score+'/'+a.max});fb('Grade saved for '+s.name+'.','ok')},
+ 'as-csv':()=>{const a=live(K.asg).find(x=>x.id===AS.sid);csvOut(a.title.replace(/\W+/g,'_')+'-grades.csv',[['Student','Submitted','Score','Max','Feedback']].concat(live(K.sub).filter(s=>s.aid===a.id).map(s=>[s.name,new Date(s.at).toISOString(),s.score==null?'':s.score,a.max,s.fb||''])))},
+ 'as-cls':t=>{AS.sc.cls=t.value;AS.sc.name=v('ss-name');asgRender()},'as-name':t=>{AS.sc.name=t.value.trim();asgRender()},
+ 'as-open':t=>{AS.sc.name=v('ss-name')||AS.sc.name;if(AS.sc.name.length<2){fb('Type your full name first.','err');return}AS.sid=t.dataset.id;AS.subj=live(K.sub).find(s=>s.aid===AS.sid&&s.name.toLowerCase()===AS.sc.name.toLowerCase())||null;AS.file=AS.subj&&AS.subj.file||null;AS.view='submit';asgRender()},
+ 'as-file':async t=>{const f=t.files[0];if(!f)return;try{if(/^image\//.test(f.type)){AS.file={name:f.name,data:await compress(f,900)}}else{if(f.size>150*1024)throw new Error('That file is over 150 KB. Send a photo or a smaller file.');AS.file={name:f.name,data:await new Promise((r,j)=>{const x=new FileReader();x.onload=()=>r(x.result);x.onerror=j;x.readAsDataURL(f)})}}$('as-fn').textContent='📎 '+AS.file.name;fb('File attached.','ok')}catch(e){AS.file=null;fb(e.message||'Could not attach that file.','err')}},
+ 'as-send':()=>{const a=live(K.asg).find(x=>x.id===AS.sid),text=v('as-text');if(!text&&!AS.file){fb('Write your answer or attach a file.','err');return}const old=AS.subj;const s={id:old?old.id:nid(),aid:a.id,name:AS.sc.name,cls:a.cls,text,file:AS.file,at:Date.now()};upsert(K.sub,s);AS.view='list';AS.file=null;fb('Submitted ✔ Your teacher can now see your work.','ok',3500);asgRender()}};
+/* ---------- LESSON NOTES ---------- */
+const LE={view:'list',draft:null,f:{cls:'',q:''},pick:[]};
+const LF=[['objectives','Learning objectives'],['prior','Previous knowledge'],['aids','Teaching aids / resources'],['content','Lesson content / development'],['activities','Class activities'],['assess','Evaluation / assessment'],['assign','Assignment / homework'],['reflect','Teacher reflection']];
+function lesRender(){shell(lesView(),Object.assign(baseH(lesRender),LEH))}
+function lesView(){if(LE.view==='edit')return lesForm();const L=live(K.les).filter(x=>(!LE.f.cls||x.cls===LE.f.cls)&&(!LE.f.q||(x.topic+' '+x.subject).toLowerCase().includes(LE.f.q.toLowerCase())));
+ return '<div class="scl300-note">Write, edit, print and export lesson notes. “Pull from scheme of work” fills in the topic from the school curriculum.</div><div class="scl300-row"><div><label>Filter by class</label><select id="lf-cls" data-chg="le-f"><option value="">All classes</option>'+CO(LE.f.cls)+'</select></div><div><label>Search topic / subject</label><input id="lf-q" value="'+esc(LE.f.q)+'" data-chg="le-f"></div></div><button class="scl300-cta" data-act="le-new" type="button">➕ New lesson note</button><button class="scl300-cta alt" data-act="le-csv" type="button">📤 Export all</button><div style="overflow:auto"><table class="scl300-tbl"><tr><th>Topic</th><th>Class</th><th>Term / Wk</th><th>Status</th><th></th></tr>'+(L.sort((a,b)=>b.u-a.u).map(x=>'<tr><td><b>'+esc(x.topic)+'</b><br><small>'+esc(x.subject||'')+'</small></td><td>'+esc(x.cls)+'</td><td>'+esc(x.term||'')+' · '+esc(x.week||'')+'</td><td>'+({draft:'📝 Draft',ready:'✅ Ready',taught:'🎓 Taught'}[x.status]||'📝')+'</td><td style="white-space:nowrap"><button data-act="le-edit" data-id="'+x.id+'" type="button">✏️</button> <button data-act="le-print" data-id="'+x.id+'" type="button">🖨</button> <button data-act="le-dup" data-id="'+x.id+'" type="button">📄</button> <button data-act="le-del" data-id="'+x.id+'" type="button">🗑</button></td></tr>').join('')||'<tr><td colspan="5">No lesson notes yet.</td></tr>')+'</table></div>'}
+function lesForm(){const d=LE.draft;let h='<h4>'+(d.u?'Edit':'New')+' lesson note</h4><div class="scl300-row3"><div><label>Class *</label><select id="ln-cls">'+CO(d.cls)+'</select></div><div><label>Subject *</label><input id="ln-sub" value="'+esc(d.subject)+'"></div><div><label>Term</label><select id="ln-term">'+['First Term','Second Term','Third Term'].map(t=>'<option'+(d.term===t?' selected':'')+'>'+t+'</option>').join('')+'</select></div></div><div class="scl300-row3"><div><label>Week</label><input id="ln-week" value="'+esc(d.week)+'" placeholder="Week 3"></div><div><label>Date</label><input id="ln-date" type="date" value="'+esc(d.date)+'"></div><div><label>Duration (min)</label><input id="ln-dur" type="number" value="'+esc(d.dur)+'"></div></div><label>Topic *</label><input id="ln-topic" value="'+esc(d.topic)+'"><button class="scl300-cta alt" data-act="le-scheme" type="button">📘 Pull from scheme of work</button><div id="le-pick">'+LE.pick.map((p,i)=>'<div style="border:1px solid #eadcff;border-radius:10px;padding:8px;margin:6px 0;font-size:12px"><b>'+esc(p.subject)+' · '+esc(p.term)+'</b><br>'+esc(String(p.text).replace(/\s+/g,' ').slice(0,220))+'…<br><button class="scl300-cta" data-act="le-use" data-i="'+i+'" type="button" style="padding:6px 10px">Use this</button></div>').join('')+'</div>';
+ LF.forEach(f=>{h+='<label>'+f[1]+'</label><textarea id="ln-'+f[0]+'" rows="3">'+esc(d[f[0]])+'</textarea>'});
+ return h+'<label>Status</label><select id="ln-status">'+[['draft','Draft'],['ready','Ready to teach'],['taught','Taught']].map(o=>'<option value="'+o[0]+'"'+(d.status===o[0]?' selected':'')+'>'+o[1]+'</option>').join('')+'</select><div style="margin-top:8px"><button class="scl300-cta" data-act="le-save" type="button">💾 Save</button><button class="scl300-cta warn" data-act="le-back" type="button">Cancel</button></div>'}
+function readLes(){const d=LE.draft;if(!d||!$('ln-topic'))return;d.cls=v('ln-cls');d.subject=v('ln-sub');d.term=v('ln-term');d.week=v('ln-week');d.date=v('ln-date');d.dur=v('ln-dur');d.topic=v('ln-topic');d.status=v('ln-status');LF.forEach(f=>d[f[0]]=($('ln-'+f[0])||{value:''}).value)}
+const nc=c=>String(c||'').toLowerCase().replace(/[^a-z0-9]/g,'');
+function lesPrint(x){const w=window.open('','_blank');if(!w){fb('Allow pop-ups to print.','warn');return}w.document.write('<!doctype html><html><head><title>Lesson Note</title><style>body{font-family:Arial,sans-serif;padding:24px;color:#111}h1{color:#650007;margin:0}td,th{border:1px solid #999;padding:6px;text-align:left;vertical-align:top}table{border-collapse:collapse;width:100%;margin:6px 0}</style></head><body><h1>Shining Child Leaders School</h1><h2>Lesson Note</h2><table><tr><th>Class</th><td>'+esc(x.cls)+'</td><th>Subject</th><td>'+esc(x.subject)+'</td></tr><tr><th>Term / Week</th><td>'+esc(x.term)+' / '+esc(x.week)+'</td><th>Date / Duration</th><td>'+esc(x.date)+' / '+esc(x.dur)+' min</td></tr><tr><th>Topic</th><td colspan="3">'+esc(x.topic)+'</td></tr></table>'+LF.map(f=>'<h3>'+f[1]+'</h3><p style="white-space:pre-wrap">'+esc(x[f[0]]||'—')+'</p>').join('')+'<script>window.onload=function(){window.print()}<\/script></body></html>');w.document.close()}
+const LEH={
+ 'le-f':()=>{LE.f.cls=v('lf-cls');LE.f.q=v('lf-q');lesRender()},
+ 'le-new':()=>{LE.draft={id:nid(),cls:'Primary 1',subject:'',term:'First Term',week:'',date:'',dur:'40',topic:'',status:'draft',objectives:'',prior:'',aids:'',content:'',activities:'',assess:'',assign:'',reflect:''};LE.pick=[];LE.view='edit';lesRender()},
+ 'le-edit':t=>{LE.draft=JSON.parse(JSON.stringify(live(K.les).find(x=>x.id===t.dataset.id)));LE.pick=[];LE.view='edit';lesRender()},
+ 'le-back':()=>{LE.view='list';lesRender()},
+ 'le-save':()=>{readLes();const d=LE.draft;if(!d.topic||!d.subject){fb('Topic and subject are required.','err');return}upsert(K.les,d);LE.view='list';fb('Lesson note saved ✔','ok');lesRender()},
+ 'le-del':t=>{if(!confirm('Delete this lesson note?'))return;remove(K.les,t.dataset.id);fb('Lesson note deleted.','ok');lesRender()},
+ 'le-dup':t=>{const x=JSON.parse(JSON.stringify(live(K.les).find(y=>y.id===t.dataset.id)));x.id=nid();x.topic+=' (copy)';x.status='draft';upsert(K.les,x);fb('Duplicated.','ok');lesRender()},
+ 'le-print':t=>lesPrint(live(K.les).find(x=>x.id===t.dataset.id)),
+ 'le-csv':()=>csvOut('lesson-notes.csv',[['Class','Subject','Term','Week','Date','Topic','Status'].concat(LF.map(f=>f[1]))].concat(live(K.les).map(x=>[x.cls,x.subject,x.term,x.week,x.date,x.topic,x.status].concat(LF.map(f=>x[f[0]]||''))))),
+ 'le-scheme':()=>{readLes();const d=LE.draft,pages=window.sclPages||[];const hit=pages.filter(p=>nc(p.class)===nc(d.cls)&&(!d.subject||nc(p.subject).includes(nc(d.subject))||nc(d.subject).includes(nc(p.subject)))&&(!d.term||nc(p.term)===nc(d.term)));LE.pick=hit.slice(0,8);fb(hit.length?hit.length+' scheme page(s) found.':'No scheme of work found for that class/subject/term.',hit.length?'ok':'warn');lesRender()},
+ 'le-use':t=>{readLes();const p=LE.pick[+t.dataset.i],d=LE.draft;const txt=String(p.text).replace(/\s+/g,' ').trim();if(!d.topic)d.topic=txt.slice(0,90);d.content=(d.content?d.content+'\n\n':'')+txt;if(!d.subject)d.subject=p.subject;LE.pick=[];fb('Scheme of work added to the lesson content.','ok');lesRender()}};
+/* ---------- BULK DATA / EXCEL ---------- */
+const BK={type:'students',rows:null,name:'',test:''};
+const AL={name:['name','fullname','studentname','student','childname','staffname','teachername','pupil'],cls:['class','classname','grade','level'],id:['id','studentid','admissionid','userid','staffid'],pn:['parentname','guardianname','guardian','parent'],pe:['parentemail','guardianemail','email','emailaddress'],pp:['parentphone','guardianphone','phone','phonenumber','mobile','whatsapp'],role:['role','position','designation'],subject:['subject','subjects'],email:['email','emailaddress','staffemail'],phone:['phone','phonenumber','mobile','whatsapp'],q:['question','questions','q'],a:['a','optiona','option1'],b:['b','optionb','option2'],c:['c','optionc','option3'],d:['d','optiond','option4'],ans:['answer','correct','correctanswer','ans','key']};
+const BT={students:{label:'🧒 Students (with parent contacts)',f:['name','cls','id','pn','pe','pp'],tpl:[['Name','Class','Student ID','Parent Name','Parent Email','Parent Phone'],['Ada Obi','Primary 3','','Mrs Obi','mum@mail.com','08012345678']]},staff:{label:'👩‍🏫 Staff / teachers',f:['name','role','subject','email','phone','id'],tpl:[['Name','Role','Subject','Email','Phone','Staff ID'],['John Paul','Teacher','Mathematics','jp@mail.com','08011112222','']]},cbt:{label:'🧠 CBT questions (into a test)',f:['q','a','b','c','d','ans'],tpl:[['Question','A','B','C','D','Answer'],['What is 2+2?','3','4','5','6','B']]}};
+function loadXLSX(){return window.XLSX?Promise.resolve():new Promise((res,rej)=>{const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';s.onload=res;s.onerror=()=>rej(new Error('Excel reader could not load (offline?). Save the sheet as CSV and upload that instead.'));document.head.appendChild(s)})}
+async function readSheet(file){if(/\.(xlsx|xls)$/i.test(file.name)){await loadXLSX();const wb=XLSX.read(await file.arrayBuffer(),{type:'array'});return XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,defval:''})}return parseCSV(await file.text())}
+function mapRows(rows,type){if(rows.length<2)return[];const hd=rows[0].map(x=>String(x).toLowerCase().replace(/[^a-z0-9]/g,'')),idx={};BT[type].f.forEach(f=>{const i=hd.findIndex(h=>AL[f].indexOf(h)>-1);if(i>-1)idx[f]=i});if(type==='staff'&&idx.email==null){}return rows.slice(1).map(r=>{const o={};Object.keys(idx).forEach(f=>o[f]=String(r[idx[f]]==null?'':r[idx[f]]).trim());return o}).filter(o=>Object.values(o).some(Boolean))}
+function bulkRender(){const T=BT[BK.type];let h='<div class="scl300-note">Upload an Excel (.xlsx/.xls) or CSV file, or paste rows copied from Excel. Headers are matched automatically.</div>'+ctab(Object.keys(BT).map(k=>[k,BT[k].label]),BK.type,'bk-type')+'<button class="scl300-cta alt" data-act="bk-tpl" type="button">⬇ Download template</button><label>Upload file</label><input type="file" id="bk-file" accept=".xlsx,.xls,.csv,.txt" data-chg="bk-file"><label>…or paste (first row = headers)</label><textarea id="bk-paste" rows="3" placeholder="Name\tClass\tParent Email\tParent Phone"></textarea><button class="scl300-cta" data-act="bk-parse" type="button">👁 Preview</button>';
+ if(BK.type==='cbt'){const ts=live(K.cbt);h+='<label>Add questions to test</label><select id="bk-test"><option value="">➕ Create a new test</option>'+ts.map(t=>'<option value="'+t.id+'"'+(BK.test===t.id?' selected':'')+'>'+esc(t.title)+' ('+t.cls+')</option>').join('')+'</select>'}
+ if(BK.rows){h+='<div class="scl300-note"><b>'+BK.rows.length+'</b> row(s) read'+(BK.name?' from '+esc(BK.name):'')+'. Preview of the first 6:</div><div style="overflow:auto"><table class="scl300-tbl"><tr>'+T.f.map(f=>'<th>'+f+'</th>').join('')+'</tr>'+BK.rows.slice(0,6).map(r=>'<tr>'+T.f.map(f=>'<td>'+esc(r[f]||'')+'</td>').join('')+'</tr>').join('')+'</table></div><button class="scl300-cta" data-act="bk-go" type="button">✅ Import '+BK.rows.length+' row(s)</button>'}
+ h+='<h4 style="margin-top:14px">⬆ Export & backup</h4><div><button class="scl300-cta alt" data-act="bk-ex" data-v="students" type="button">Students</button><button class="scl300-cta alt" data-act="bk-ex" data-v="staff" type="button">Staff</button><button class="scl300-cta alt" data-act="bk-ex" data-v="att" type="button">Attendance</button><button class="scl300-cta alt" data-act="bk-ex" data-v="cbt" type="button">CBT results</button><button class="scl300-cta alt" data-act="bk-ex" data-v="asg" type="button">Assignment grades</button><button class="scl300-cta warn" data-act="bk-backup" type="button">💾 Full backup (.json)</button></div><label>Restore a backup</label><input type="file" accept=".json" data-chg="bk-restore">';
+ shell(h,Object.assign(baseH(bulkRender),BKH))}
+const BKH={
+ 'bk-type':t=>{BK.type=t.dataset.v;BK.rows=null;bulkRender()},
+ 'bk-tpl':()=>csvOut(BK.type+'-template.csv',BT[BK.type].tpl),
+ 'bk-file':async t=>{const f=t.files[0];if(!f)return;try{fb('Reading '+f.name+'…','info',1500);BK.rows=mapRows(await readSheet(f),BK.type);BK.name=f.name;fb(BK.rows.length?BK.rows.length+' row(s) found.':'No usable rows. Check that the first row has headers like Name, Class.','warn'===0?'':BK.rows.length?'ok':'warn');bulkRender()}catch(e){fb(e.message||'Could not read that file.','err',4500)}},
+ 'bk-parse':()=>{const t=($('bk-paste')||{}).value||'';if(!t.trim()){fb('Paste some rows or choose a file.','err');return}BK.rows=mapRows(parseCSV(t),BK.type);BK.name='pasted text';fb(BK.rows.length?BK.rows.length+' row(s) found.':'No usable rows — first row must be headers.',BK.rows.length?'ok':'warn');bulkRender()},
+ 'bk-go':()=>{const rows=BK.rows||[];if(!rows.length)return;let add=0,upd=0,skip=0;
+  if(BK.type==='students'){const r=LS('sclStuRoster',[]);rows.forEach(o=>{if(!o.name){skip++;return}const c=normCls(o.cls)||'Primary 1';const ex=r.find(s=>(o.id&&s.id===o.id)||(s.name.toLowerCase()===o.name.toLowerCase()&&s.cls===c));if(ex){['pn','pe','pp'].forEach(k=>{if(o[k])ex[k]=o[k]});upd++}else{r.push({id:o.id||uid(),name:o.name,cls:c,pn:o.pn||'',pe:o.pe||'',pp:o.pp||''});add++}});SV('sclStuRoster',r)}
+  else if(BK.type==='staff'){const a=arr(K.staff);rows.forEach(o=>{if(!o.name){skip++;return}const ex=a.find(s=>!s.del&&((o.id&&s.sid===o.id)||s.name.toLowerCase()===o.name.toLowerCase()));if(ex){Object.assign(ex,{role:o.role||ex.role,subject:o.subject||ex.subject,email:o.email||ex.email,phone:o.phone||ex.phone,u:Date.now()});upd++}else{a.push({id:nid(),sid:o.id||'',name:o.name,role:o.role||'Teacher',subject:o.subject||'',email:o.email||'',phone:o.phone||'',u:Date.now()});add++}});put(K.staff,a)}
+  else{const qs=rows.map(o=>{const op=[o.a,o.b,o.c,o.d].map(x=>x||'');let ai=Math.max(0,'ABCD'.indexOf(String(o.ans||'').trim().toUpperCase().charAt(0)));if(String(o.ans||'').length>1){const j=op.findIndex(x=>x.toLowerCase()===String(o.ans).toLowerCase());if(j>-1)ai=j}return{q:o.q||'',o:op,a:ai}}).filter(q=>q.q&&q.o.filter(Boolean).length>=2&&q.o[q.a]);skip=rows.length-qs.length;const tid=v('bk-test');let t=tid&&live(K.cbt).find(x=>x.id===tid);if(!t)t={id:nid(),title:'Imported test '+new Date().toLocaleDateString(),subject:'',cls:'Primary 1',mins:20,pass:50,shuffle:false,pub:false,qs:[]};t.qs=t.qs.concat(qs);upsert(K.cbt,t);add=qs.length}
+  BK.rows=null;fb('Import complete: '+add+' added, '+upd+' updated, '+skip+' skipped (missing data).','ok',4500);bulkRender()},
+ 'bk-ex':t=>{const k=t.dataset.v;if(k==='students')csvOut('students.csv',[['Name','Class','Student ID','Parent Name','Parent Email','Parent Phone']].concat(LS('sclStuRoster',[]).map(s=>[s.name,s.cls,s.id,s.pn||'',s.pe||'',s.pp||''])));
+  else if(k==='staff')csvOut('staff.csv',[['Name','Role','Subject','Email','Phone','Staff ID']].concat(live(K.staff).map(s=>[s.name,s.role,s.subject,s.email,s.phone,s.sid||''])));
+  else if(k==='att')expCsv();
+  else if(k==='cbt')csvOut('cbt-results.csv',[['Test','Student','Class','Score','Total','Percent','When']].concat(live(K.cba).map(a=>{const te=live(K.cbt).find(x=>x.id===a.tid);return[te?te.title:a.tid,a.name,a.cls,a.score,a.total,a.pct,new Date(a.at).toISOString()]})));
+  else csvOut('assignment-grades.csv',[['Assignment','Student','Score','Max','Feedback']].concat(live(K.sub).map(s=>{const a=live(K.asg).find(x=>x.id===s.aid);return[a?a.title:s.aid,s.name,s.score==null?'':s.score,a?a.max:'',s.fb||'']})))},
+ 'bk-backup':()=>{const o={_scl:'backup',at:new Date().toISOString()};['sclStuRoster','sclStuAtt','sclStuNotify','sclOutbox'].concat(SYNCK).forEach(k=>o[k]=LS(k,k==='sclStuAtt'?{}:[]));const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(o)],{type:'application/json'}));a.download='scl-backup-'+today()+'.json';a.click();fb('Backup downloaded ✔ — keep it somewhere safe.','ok',3500)},
+ 'bk-restore':async t=>{const f=t.files[0];if(!f)return;try{const o=JSON.parse(await f.text());if(o._scl!=='backup')throw new Error('That is not an SCL backup file.');let n=0;Object.keys(o).forEach(k=>{if(k[0]==='_')return;if(SYNCK.indexOf(k)>-1)SV(k,mergeArr(arr(k),o[k]));else if(k==='sclStuAtt')SV(k,Object.assign({},LS(k,{}),o[k]));else if(Array.isArray(o[k]))SV(k,mergeArr(LS(k,[]).map(x=>x.id?x:Object.assign({id:uid()},x)),o[k].map(x=>x.id?x:Object.assign({id:uid()},x))));n++});fb('Backup restored ('+n+' data sets merged).','ok',3500);bulkRender()}catch(e){fb(e.message||'Restore failed.','err')}}};
+/* ---------- tab routing (replaces the old "workspace is ready" notices) ---------- */
+const MODS={cbt:cbtRender,assignments:asgRender,lessons:lesRender,bulk:bulkRender};
+const origTab=window.sclSuiteTab;
+window.sclSuiteTab=function(tab){if(MODS[tab]&&$('sclSuiteBody')){try{QA('.scl-suite-tabs button').forEach(x=>x.classList.remove('active'));const t=$('sclTab-'+tab);t&&t.classList.add('active');QA('.scl-suite-tabs').forEach(x=>x.classList.remove('scl-timetable-only-tabs-hidden'))}catch(_){}
+  try{MODS[tab]()}catch(e){fb('Could not open that screen: '+(e&&e.message),'err')}window.sclSync(true);return}
+ return origTab?origTab.apply(this,arguments):undefined};
+window.sclOpenCbt=()=>{call('openM','sclSuiteModal');setTimeout(()=>window.sclSuiteTab('cbt'),40)};
+setTimeout(()=>window.sclSync(true),3500);
 })();
 
 </script>
-
-<!-- SCL FINAL UI/UX CONTRAST + ICON POLISH — 2026-10-02 -->
-<style id="scl-final-contrast-icons">
-:root{
-  --ui-light:#ffffff;
-  --ui-dark:#160a16;
-  --ui-maroon:#650007;
-  --ui-gold:#f2ae00;
-  --ui-green:#126b3a;
-  --ui-line:rgba(101,0,7,.16);
-  --ui-shadow:0 10px 28px rgba(42,10,25,.12);
-}
-html body{
-  -webkit-text-stroke:0!important;
-}
-html body *{
-  -webkit-text-stroke:0!important;
-}
-html body h1,html body h2,html body h3,html body h4,html body h5,
-html body p,html body span,html body small,html body b,html body strong,
-html body label,html body li,html body td,html body th,html body a,
-html body button,html body input,html body select,html body textarea{
-  text-shadow:none!important;
-}
-/* Text must never use the old black keyline/outline effect. */
-html body .scl-profile-shell *,
-html body #sclModernProfileModal *,
-html body #sclAttendanceModal *,
-html body #sclBranchAdminModal *,
-html body #sclParentChildModal *,
-html body .scl-role-panel *,
-html body .scl-role-action *,
-html body .scl-att-card *,
-html body .scl-rank-card *,
-html body .scl-rank-cycle *{
-  -webkit-text-stroke:0!important;
-  text-shadow:none!important;
-}
-/* Clear light surfaces = dark text. */
-html body .scl-profile-meta-grid>div,
-html body .scl-profile-shell .card,
-html body .scl-modern-profile-body,
-html body .scl-role-panel,
-html body .scl-role-action,
-html body .scl-att-card,
-html body .scl-att-branch,
-html body .scl-rank-card,
-html body .scl-rank-cycle,
-html body .scl-admin-box,
-html body .scl-child-card,
-html body .scl-child-item,
-html body .scl-profile-passkey,
-html body .scl-profile-search-hit,
-html body .scl-profile-toolbar~section,
-html body .scl-parent-claim-card .form,
-html body .scl-parent-claim-choice,
-html body .scl-parent-claim-warning{
-  color:var(--ui-dark)!important;
-}
-/* Dark surfaces = white text; gold is used only where it remains readable. */
-html body .scl-profile-toolbar,
-html body .scl-profile-toolbar button,
-html body .scl-modern-profile-head,
-html body .scl-role-panel.dark,
-html body .scl-profile-cover.dark{
-  color:#fff!important;
-}
-html body .scl-profile-toolbar button{color:#fff!important}
-html body .scl-profile-toolbar button.scl-profile-primary,
-html body .scl-profile-toolbar button:hover{
-  color:var(--ui-dark)!important;
-}
-/* Headings/values inside light profile cards stay dark and crisp. */
-html body .scl-profile-meta-grid span{color:#5b3b18!important}
-html body .scl-profile-meta-grid b{color:#160a16!important}
-html body .scl-modern-profile-body h1,
-html body .scl-modern-profile-body h2,
-html body .scl-modern-profile-body h3,
-html body .scl-modern-profile-body h4,
-html body .scl-modern-profile-body h5,
-html body .scl-modern-profile-body p,
-html body .scl-modern-profile-body li,
-html body .scl-modern-profile-body td,
-html body .scl-modern-profile-body label,
-html body .scl-modern-profile-body small{ text-shadow:none!important; }
-/* Profile cards get cleaner depth and smoother movement. */
-html body .scl-profile-meta-grid>div,
-html body .scl-role-panel,
-html body .scl-role-action,
-html body .scl-att-card,
-html body .scl-rank-card{
-  border-radius:15px!important;
-  transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease,background .2s ease;
-}
-html body .scl-profile-meta-grid>div:hover,
-html body .scl-role-panel:hover,
-html body .scl-role-action:hover,
-html body .scl-att-card:hover,
-html body .scl-rank-card:hover{
-  transform:translateY(-2px);
-  box-shadow:0 12px 28px rgba(42,10,25,.14)!important;
-}
-/* Buttons: strong contrast, no text outline, tactile feedback. */
-html body button,
-html body .btn,
-html body .scl-btn,
-html body .scl-shortcut-item,
-html body .scl-parent-claim-choice button,
-html body .options button{
-  -webkit-text-stroke:0!important;
-  text-shadow:none!important;
-  transition:transform .16s ease,box-shadow .16s ease,filter .16s ease,background .16s ease;
-}
-html body button:active,
-html body .btn:active,
-html body .scl-btn:active,
-html body .scl-shortcut-item:active{
-  transform:translateY(1px) scale(.985);
-}
-html body .red,html body .scl-btn,
-html body .scl-home-register-primary,
-html body .scl-shortcut-item.is-dark{
-  background:linear-gradient(135deg,#650007,#a40017)!important;
-  color:#fff!important;
-}
-html body .gold,html body .scl-btn.alt{
-  background:linear-gradient(135deg,#f2ae00,#ffd45a)!important;
-  color:#241000!important;
-}
-html body .outline{
-  background:#fff!important;
-  color:#650007!important;
-  border:1.5px solid #650007!important;
-}
-/* Inputs/selects/areas: readable dark text on white writing surfaces. */
-html body input,html body select,html body textarea{
-  color:#160a16!important;
-  background:#fff!important;
-  -webkit-text-stroke:0!important;
-  text-shadow:none!important;
-}
-html body input::placeholder,html body textarea::placeholder{
-  color:#655b61!important;
-  opacity:1!important;
-}
-/* Add visual icons to form labels without changing their text. */
-html body .field label,
-html body .scl-form-grid label,
-html body #feesModal label,
-html body .scl-uniform-form label{
-  position:relative;
-  display:flex;
-  align-items:center;
-  gap:7px;
-  color:#160a16!important;
-  text-shadow:none!important;
-}
-html body .field label::before,
-html body .scl-form-grid label::before,
-html body #feesModal label::before,
-html body .scl-uniform-form label::before{
-  content:"✎";
-  width:22px;height:22px;flex:0 0 22px;
-  display:grid;place-items:center;
-  border-radius:7px;
-  background:#650007;color:#fff;
-  font-size:12px;font-weight:900;
-}
-html body label[for*="email" i]::before,
-html body label:has(+ input[type="email"])::before{content:"✉"}
-html body label[for*="phone" i]::before,
-html body label:has(+ input[type="tel"])::before{content:"☎"}
-html body label[for*="name" i]::before{content:"👤"}
-html body label[for*="date" i]::before,
-html body label:has(+ input[type="date"])::before{content:"▣"}
-html body label[for*="photo" i]::before,
-html body label[for*="image" i]::before{content:"▧"}
-html body label[for*="class" i]::before,
-html body label[for*="subject" i]::before{content:"▤"}
-html body label[for*="password" i]::before,
-html body label:has(+ input[type="password"])::before{content:"◆"}
-/* Quick-action buttons: icon badge even when the original button had no icon. */
-html body .scl-home-action-clean>button .icon{
-  color:#fff!important;
-  text-shadow:none!important;
-}
-html body .scl-home-action-clean>button b,
-html body .scl-home-action-clean>button small{
-  text-shadow:none!important;
-}
-html body .scl-shortcut-item,
-html body .scl-shortcut-item small{
-  text-shadow:none!important;
-}
-html body .scl-shortcut-item::first-letter{font-size:1.05em}
-/* Child registration flow. */
-html body #sclParentChildModal .mh,
-html body #sclParentChildModal .mh h3{
-  color:#fff!important;
-  text-shadow:none!important;
-}
-html body #sclParentChildModal .mh button{
-  color:#fff!important;
-}
-html body #sclParentChildModal .scl-parent-claim-choice button{
-  background:#fff!important;
-  color:#650007!important;
-  border:1px solid rgba(101,0,7,.2)!important;
-  border-radius:14px!important;
-  box-shadow:0 5px 16px rgba(42,10,25,.08);
-  min-height:54px;
-}
-html body #sclParentChildModal .scl-parent-claim-choice button:hover{
-  background:#fff4d8!important;
-  color:#650007!important;
-  transform:translateY(-2px);
-}
-/* "Free" / no-cost action labels get a clear badge. */
-html body [data-shortcut-label*="free" i],
-html body button[title*="free" i],
-html body a[title*="free" i]{
-  position:relative;
-}
-html body [data-shortcut-label*="free" i]::after,
-html body button[title*="free" i]::after,
-html body a[title*="free" i]::after{
-  content:"FREE";
-  display:inline-grid;
-  place-items:center;
-  margin-left:6px;
-  padding:2px 6px;
-  border-radius:999px;
-  background:#126b3a;
-  color:#fff;
-  font-size:9px;
-  font-weight:900;
-  letter-spacing:.04em;
-  vertical-align:middle;
-}
-/* Keep accessibility focus rings: these are not text outlines and remain intentional. */
-html body :is(button,a,input,select,textarea):focus-visible{
-  outline:3px solid #f2ae00!important;
-  outline-offset:2px!important;
-}
-/* Mobile: larger tap targets and less visual crowding. */
-@media(max-width:600px){
-  html body .scl-profile-toolbar button{min-height:44px;font-size:11px}
-  html body .scl-shortcut-item{min-height:58px;padding:12px 10px}
-  html body .scl-parent-claim-choice button{min-height:56px}
-  html body .field input,html body .field select,html body .field textarea{min-height:46px}
-}
-@media(prefers-reduced-motion:reduce){
-  html body *,html body *::before,html body *::after{
-    transition-duration:.01ms!important;
-    animation-duration:.01ms!important;
-  }
-}
-</style>
-<script id="scl-final-contrast-icons-js">
-(function(){
-  'use strict';
-  var ICONS=[
-    [/register your child/i,'👨‍👩‍👧'],
-    [/register|registration|admission/i,'📝'],
-    [/free/i,'🆓'],
-    [/profile/i,'👤'],
-    [/home/i,'⌂'],
-    [/attendance/i,'✓'],
-    [/fee|payment/i,'💳'],
-    [/result|certificate/i,'📊'],
-    [/material|book|curriculum|scheme/i,'📚'],
-    [/uniform/i,'👕'],
-    [/gallery|photo|image/i,'🖼'],
-    [/message|contact|support/i,'💬'],
-    [/search/i,'⌕'],
-    [/save|submit|send/i,'➤'],
-    [/edit|update/i,'✎'],
-    [/delete|remove/i,'⌫'],
-    [/close|cancel|back/i,'‹'],
-    [/next|continue/i,'›'],
-    [/download/i,'⇩'],
-    [/upload/i,'⇧'],
-    [/login|sign in/i,'↪'],
-    [/logout|sign out/i,'↩'],
-    [/teacher|staff/i,'🎓'],
-    [/parent|guardian/i,'👨‍👩‍👧'],
-    [/student|child/i,'🧒']
-  ];
-  function labelOf(el){
-    return ((el.getAttribute('aria-label')||'')+' '+(el.getAttribute('title')||'')+' '+(el.textContent||'')).replace(/\s+/g,' ').trim();
-  }
-  function iconFor(t){
-    for(var i=0;i<ICONS.length;i++) if(ICONS[i][0].test(t)) return ICONS[i][1];
-    return '•';
-  }
-  function addIcons(){
-    document.querySelectorAll('button,.scl-shortcut-item,.scl-btn,.btn').forEach(function(b){
-      if(b.dataset.sclIconDone)return;
-      if(b.querySelector('.scl-auto-icon,.icon')){b.dataset.sclIconDone='1';return}
-      var t=labelOf(b);
-      if(!t)return;
-      var sp=document.createElement('span');
-      sp.className='scl-auto-icon';
-      sp.setAttribute('aria-hidden','true');
-      sp.textContent=iconFor(t);
-      sp.style.cssText='display:inline-grid;place-items:center;width:1.35em;height:1.35em;margin-right:6px;vertical-align:-.18em;font-size:1.05em;line-height:1;filter:none';
-      b.insertBefore(sp,b.firstChild);
-      b.dataset.sclIconDone='1';
-    });
-  }
-  /*
-   * For text-only elements inside the profile, choose white on genuinely dark
-   * surfaces and dark ink on light surfaces. This prevents inherited outline/
-   * shadow tricks from being used for readability.
-   */
-  function rgb(c){
-    var m=(c||'').match(/rgba?\((\d+)[,\s]+(\d+)[,\s]+(\d+)/i);
-    return m?[+m[1],+m[2],+m[3]]:null;
-  }
-  function luminance(c){
-    var r=c[0]/255,g=c[1]/255,b=c[2]/255;
-    r=r<=.03928?r/12.92:Math.pow((r+.055)/1.055,2.4);
-    g=g<=.03928?g/12.92:Math.pow((g+.055)/1.055,2.4);
-    b=b<=.03928?b/12.92:Math.pow((b+.055)/1.055,2.4);
-    return .2126*r+.7152*g+.0722*b;
-  }
-  function contrastProfile(){
-    document.querySelectorAll('.scl-modern-profile-body, .scl-profile-shell, #sclParentChildModal .form').forEach(function(root){
-      root.querySelectorAll('p,span,small,b,strong,em,li,td,th,label,h1,h2,h3,h4,h5').forEach(function(el){
-        if(el.children.length && !/^(b|strong)$/i.test(el.tagName))return;
-        var node=el,parent=root,found=null;
-        while(node && node!==document.body){
-          var cs=getComputedStyle(node);
-          var c=rgb(cs.backgroundColor);
-          if(c && luminance(c)>.001){found=c;break}
-          node=node.parentElement;
-        }
-        if(!found)return;
-        el.style.webkitTextStroke='0';
-        el.style.textShadow='none';
-        el.style.color=luminance(found)<.38?'#ffffff':'#160a16';
-      });
-    });
-  }
-  function polish(){
-    addIcons();
-    contrastProfile();
-  }
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',polish);
-  else polish();
-  setTimeout(polish,600);
-  setTimeout(polish,1800);
-  if(window.MutationObserver){
-    var mo=new MutationObserver(function(){polish()});
-    mo.observe(document.body,{childList:true,subtree:true});
-  }
-  /* Force a fresh build after this UI layer is installed. */
-  try{
-    var K='sclFinalUiContrastIcons';
-    if(localStorage.getItem(K)!=='2026-10-02-v1'){
-      localStorage.setItem(K,'2026-10-02-v1');
-      setTimeout(function(){try{location.reload()}catch(e){}},120);
-    }
-  }catch(e){}
-})();
-</script>
-
 </body></html>
