@@ -2,13 +2,118 @@
 
 <html lang="en">
 <head>
+<style id="scl-ui-v1">
+/* profile: four compact categories, always above floating badges */
+.scl-profile-toolbar{display:grid!important;grid-template-columns:repeat(4,1fr);gap:6px;position:sticky;top:env(safe-area-inset-top,0px);z-index:2147483000;padding:8px 6px;background:rgba(60,0,8,.96);border-radius:12px;margin:0 0 10px}
+.scl-profile-toolbar button{min-width:0;padding:9px 2px;font-size:11px;line-height:1.15;white-space:normal;text-align:center;border-radius:10px}
+#profileModal .card,.scl-profile-card{padding-top:calc(env(safe-area-inset-top,0px) + 8px)}
+/* notice banner */
+.scl-notice-banner{display:flex!important;align-items:center;gap:8px;text-align:left;border:2px solid #f5c542!important;background:linear-gradient(90deg,#7a0010,#b3001b)!important;color:#fff!important;animation:sclNb 2.4s ease-in-out infinite}
+.scl-notice-banner .scl-nb-tag{background:#f5c542;color:#4a0008;font-weight:800;font-size:11px;padding:3px 8px;border-radius:999px;white-space:nowrap}
+.scl-notice-banner b{font-size:13px;line-height:1.25}
+@keyframes sclNb{0%,100%{box-shadow:0 0 0 0 rgba(245,197,66,.55)}50%{box-shadow:0 0 0 7px rgba(245,197,66,0)}}
+/* fees / receipt upload: contrast + alignment + status chips */
+#feesModal .card{color:#1d0a0d}
+#feesModal input,#feesModal select,#feesModal textarea{width:100%;box-sizing:border-box;border:2px solid #8a1c2b;border-radius:10px;padding:10px;font-size:15px;background:#fff;color:#1d0a0d}
+#feesModal label{display:block;font-weight:700;margin:10px 0 4px}
+.scl-st{display:inline-block;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:800}
+.scl-st-pending{background:#fff3cd;color:#7a5200}.scl-st-approved{background:#d1f5dc;color:#0b5a26}.scl-st-rejected{background:#fde0e0;color:#8a0f0f}
+</style>
+<script id="scl-ui-v1-js">
+(function(){
+ /* banner shows the newest vacancy-type announcement posted on the website */
+ function upd(){try{var cd=window.sclCommunityData||{},all=[].concat(cd.announcements||[],cd.notifications||[]).sort(function(a,b){return new Date(b.published_at||b.created_at||0)-new Date(a.published_at||a.created_at||0)});
+  var v=all.filter(function(x){return x&&x.title&&/vacanc|recruit|job|staff|teacher|hiring|apply/i.test(x.title)})[0],t=document.getElementById('sclVacancyText');if(t&&v)t.textContent=String(v.title).slice(0,110)}catch(e){}}
+ setInterval(upd,3000);
+ /* status chips for receipt states inside the fees modal */
+ function chips(){var m=document.getElementById('feesModal');if(!m)return;m.querySelectorAll('td,span,small,b').forEach(function(e){if(e.children.length||e.dataset.sclSt)return;var t=(e.textContent||'').trim().toLowerCase(),c=t==='pending'?'pending':t==='approved'?'approved':t==='rejected'?'rejected':'';if(c){e.dataset.sclSt=1;e.classList.add('scl-st','scl-st-'+c)}})}
+ setInterval(chips,2000);
+ /* profile tabs also bring the matching section into view */
+ document.addEventListener('click',function(ev){var b=ev.target.closest&&ev.target.closest('.scl-profile-toolbar button');if(!b)return;var map={'Service Rank':'sclServiceRank','Curriculum':'sclCurriculum','Attendance':'sclAttendance'};var k=Object.keys(map).filter(function(x){return b.textContent.indexOf(x)>-1})[0];if(!k)return;setTimeout(function(){var t=document.getElementById(map[k]);if(t&&t.scrollIntoView&&t.offsetParent!==null)t.scrollIntoView({behavior:'smooth',block:'start'})},350)},true);
+})();
+</script>
+<style id="scl-redesign-v2">
+/* ---------- richer background ---------- */
+html{background:#2b0008}
+body{background:radial-gradient(1200px 600px at 12% -5%,rgba(245,197,66,.20),transparent 60%),radial-gradient(900px 700px at 100% 20%,rgba(179,0,27,.22),transparent 60%),radial-gradient(800px 800px at 0% 80%,rgba(245,197,66,.14),transparent 60%),linear-gradient(160deg,#fff9ee 0%,#fbeedc 45%,#f6e2c8 100%)!important;background-attachment:fixed!important}
+body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.5;background-image:radial-gradient(rgba(122,0,16,.10) 1.2px,transparent 1.4px);background-size:26px 26px}
+/* ---------- floating logo no longer covers navigation or titles ---------- */
+.scl-logo-coin-dock{position:fixed!important;top:6px!important;left:8px!important;right:auto!important;transform:none!important;width:46px!important;height:46px!important;z-index:60!important}
+.scl-logo-coin-dock *{max-width:100%}.scl-logo-coin-dock .scl-hub-label,.scl-logo-coin-dock small,.scl-logo-coin-dock span{display:none!important}
+.scl-logo-coin-dock img{width:46px!important;height:46px!important}
+nav{padding-left:60px}
+/* ---------- quick access: one clean grid, no repeats ---------- */
+.scl-home-action-clean{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important;padding:14px!important;margin:14px 0!important;border-radius:22px;background:rgba(255,255,255,.55);backdrop-filter:blur(8px);border:1px solid rgba(201,150,30,.45);box-shadow:0 14px 40px rgba(90,0,16,.14)}
+.scl-home-action-clean>button{all:unset;box-sizing:border-box;cursor:pointer;display:flex!important;flex-direction:column;align-items:flex-start;gap:6px;min-height:84px;padding:12px;border-radius:16px;background:linear-gradient(145deg,#fff,#fff4de);border:1px solid #ecd2a0;box-shadow:0 6px 16px rgba(90,0,16,.10);transition:transform .15s,box-shadow .15s;position:relative;overflow:hidden}
+.scl-home-action-clean>button:active{transform:scale(.97)}
+.scl-home-action-clean>button:hover{transform:translateY(-3px);box-shadow:0 14px 26px rgba(90,0,16,.20)}
+.scl-home-action-clean>button .icon{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;font-size:20px;background:linear-gradient(135deg,#7a0010,#b3001b);box-shadow:inset 0 0 0 2px rgba(245,197,66,.7)}
+.scl-home-action-clean>button .icon img{width:24px;height:24px}
+.scl-home-action-clean>button b{font-size:12.5px;letter-spacing:.03em;color:#4a0008;line-height:1.2}
+.scl-home-action-clean>button small{font-size:11px;color:#6b4a3a}
+.scl-home-action-clean>.scl-home-action-1{display:none!important}
+.scl-home-action-clean>.scl-notice-banner{grid-column:1/-1;flex-direction:row!important;align-items:center;min-height:0;background:linear-gradient(90deg,#7a0010,#b3001b)!important;border:2px solid #f5c542!important}
+.scl-home-action-clean>.scl-notice-banner b{color:#fff}
+@media(min-width:900px){.scl-home-action-clean{grid-template-columns:repeat(4,minmax(0,1fr))!important}}
+/* ---------- section cards, headings, stats ---------- */
+#about,#life,.scl-sec,.aac-section,#sclSocial{border-radius:22px!important;background:rgba(255,255,255,.72)!important;backdrop-filter:blur(6px);border:1px solid rgba(201,150,30,.35)!important;box-shadow:0 12px 34px rgba(90,0,16,.10)!important}
+#about h2,#life h2,.scl-sec h2,#about h3,#life h3{position:relative;color:#5a0010}
+#about h2::after,.scl-sec h2::after{content:"";display:block;width:54px;height:4px;margin-top:8px;border-radius:4px;background:linear-gradient(90deg,#f5c542,#b3001b)}
+#schoolStats{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(110px,1fr))!important;gap:10px;border-radius:22px!important;background:linear-gradient(135deg,#4a0006,#8a0014 55%,#b8860b)!important;box-shadow:0 16px 40px rgba(90,0,16,.35)!important}
+#schoolStats .stat{border:1px solid rgba(245,197,66,.45);border-radius:16px;padding:12px 6px;background:rgba(255,255,255,.07);text-align:center;color:#ffe9b0;font-size:11px;letter-spacing:.06em;text-transform:uppercase}
+#schoolStats .stat b{display:block;font-size:30px;color:#fff;text-shadow:0 0 14px rgba(245,197,66,.7)}
+.announcement{border-radius:16px!important;box-shadow:0 8px 22px rgba(90,0,16,.14)}
+/* ---------- profile: compact, readable, no overlap ---------- */
+.scl-profile-meta-grid{display:grid!important;grid-template-columns:1fr 1fr!important;gap:8px!important;padding:10px!important}
+.scl-profile-meta-grid>div{padding:8px 10px!important;border-radius:12px;background:#fff8ec;border:1px solid #ecd2a0;min-width:0}
+.scl-profile-meta-grid span{display:block;font-size:9.5px;letter-spacing:.08em;color:#8a5a1a}
+.scl-profile-meta-grid b{display:block;color:#3b0610!important;font-size:12.5px;overflow-wrap:anywhere;margin-top:2px}
+.scl-profile-cover{min-height:0!important;padding:14px!important;gap:12px!important}
+.scl-profile-shell{gap:10px!important}
+.scl-profile-toolbar{position:sticky;top:0;z-index:50;grid-template-columns:repeat(4,1fr);gap:6px;padding:6px;background:linear-gradient(180deg,#2a0409,#3e0710);border-radius:14px}
+.scl-profile-toolbar button{all:unset;box-sizing:border-box;cursor:pointer;text-align:center;font-size:11.5px;font-weight:700;color:#ffe9b0;padding:10px 4px;border-radius:11px;background:rgba(255,255,255,.07);border:1px solid rgba(245,197,66,.35);transition:.15s}
+.scl-profile-toolbar button.scl-profile-primary,.scl-profile-toolbar button:hover{background:linear-gradient(135deg,#f5c542,#d99a12);color:#3b0610}
+@media(max-width:600px){.scl-profile-cover{grid-template-columns:auto 1fr!important}.scl-profile-cover img{width:64px!important;height:64px!important}.scl-profile-shell{font-size:13px}.scl-profile-shell .card,.scl-profile-shell section{padding:12px!important}}
+/* ---------- curriculum finder ---------- */
+#sclCurriFinder .card{max-width:560px;width:calc(100% - 20px);max-height:92vh;overflow:auto;border-radius:20px;padding:16px;background:#fffaf2;color:#2a0a10}
+#sclCurriFinder h3{margin:0;color:#5a0010}
+#sclCurriFinder input{width:100%;box-sizing:border-box;margin:10px 0;padding:12px;font-size:15px;border:2px solid #8a1c2b;border-radius:12px}
+.scl-cf-row{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 10px}
+.scl-cf-row button,.scl-cf-go{cursor:pointer;border:1px solid #d9b46a;background:#fff;border-radius:999px;padding:7px 11px;font-size:12px;font-weight:700;color:#5a0010}
+.scl-cf-row button.on{background:#7a0010;color:#fff;border-color:#7a0010}
+.scl-cf-go{display:block;width:100%;box-sizing:border-box;border-radius:12px;padding:12px;font-size:14px;margin-top:8px;text-align:center;text-decoration:none;background:linear-gradient(135deg,#7a0010,#b3001b);color:#fff}
+.scl-cf-go.alt{background:linear-gradient(135deg,#f5c542,#d99a12);color:#3b0610}
+/* tile fixes: equal width, centred, no clipped labels */
+.scl-home-action-clean>button{width:100%!important;max-width:none!important;align-items:center!important;text-align:center;justify-content:center;min-height:92px}
+.scl-home-action-clean>button b{display:block;width:100%;font-size:11.5px!important;overflow-wrap:anywhere;word-break:normal;white-space:normal}
+.scl-home-action-clean>.scl-notice-banner{order:99;text-align:left!important;justify-content:flex-start!important}
+.scl-home-action-clean>.scl-home-action-10{grid-column:1/-1}
+.scl-home-action-clean>button b,.scl-home-action-clean>button small{text-align:center!important}.scl-home-action-clean>button .icon{margin:0 auto}.scl-home-action-clean>.scl-home-action-10{flex-direction:row!important;gap:12px}.scl-home-action-clean>.scl-home-action-10 b{width:auto}
+</style>
+<script id="scl-redesign-v2-js">
+(function(){
+ var FID='1unI9cEouRAyGDEn3-1hdVVIdiw-uIigp',FURL='https://drive.google.com/drive/folders/'+FID;
+ var CLS=['Daycare','Nursery 1','Nursery 2','Reception','Primary 1','Primary 2','Primary 3','Primary 4','Primary 5','JSS 1','JSS 2','JSS 3','SSS 1','SSS 2','SSS 3'];
+ var SUB=['Mathematics','English','Basic Science','Biology','Chemistry','Physics','Civic Education','Computer','Economics','Literature'];
+ var cls='',sub='';
+ function q(extra){return [cls,sub,document.getElementById('sclCfQ').value.trim(),extra||''].filter(Boolean).join(' ')}
+ function url(extra){var t=q(extra);return t?'https://drive.google.com/drive/search?q='+encodeURIComponent('"'+t.split(/\s+/).slice(0,8).join(' ')+'" in:'+FID):FURL}
+ function chips(id,arr,set){var el=document.getElementById(id);el.innerHTML=arr.map(function(x){return '<button type="button">'+x+'</button>'}).join('');el.onclick=function(e){var b=e.target.closest('button');if(!b)return;var on=b.classList.contains('on');el.querySelectorAll('button').forEach(function(x){x.classList.remove('on')});if(!on)b.classList.add('on');set(on?'':b.textContent);upd()}}
+ function upd(){document.getElementById('sclCfNotes').href=url();document.getElementById('sclCfScheme').href=url('Scheme of work')}
+ function build(){if(document.getElementById('sclCurriFinder'))return;var d=document.createElement('div');d.className='modal';d.id='sclCurriFinder';d.setAttribute('aria-hidden','true');
+  d.innerHTML='<div class="card"><div class="mh" style="display:flex;justify-content:space-between;align-items:center"><h3>📚 Curriculum &amp; Notes</h3><button type="button" onclick="closeM(\'sclCurriFinder\')" style="border:0;background:#7a0010;color:#fff;border-radius:10px;padding:6px 12px">X</button></div><p style="font-size:13px;margin:8px 0 0">Pick your class and subject, or type a topic. The link opens the school notes library on Google Drive at your search.</p><input id="sclCfQ" placeholder="Search a topic, e.g. fractions, photosynthesis…" autocomplete="off"><b style="font-size:12px">Class</b><div class="scl-cf-row" id="sclCfCls"></div><b style="font-size:12px">Subject</b><div class="scl-cf-row" id="sclCfSub"></div><a class="scl-cf-go" id="sclCfNotes" target="_blank" rel="noopener">🔎 Find my notes</a><a class="scl-cf-go alt" id="sclCfScheme" target="_blank" rel="noopener">🗂️ Open scheme of work</a><a class="scl-cf-go alt" href="'+FURL+'" target="_blank" rel="noopener" style="background:#fff;border:2px solid #7a0010;color:#7a0010">📁 Browse all folders</a></div>';
+  document.body.appendChild(d);chips('sclCfCls',CLS,function(v){cls=v});chips('sclCfSub',SUB,function(v){sub=v});document.getElementById('sclCfQ').addEventListener('input',upd);upd()}
+ window.openSchoolCurriculum=window.sclOpenCurriculum=function(){build();var m=document.getElementById('sclCurriFinder');m.classList.add('open');m.style.display='flex';m.setAttribute('aria-hidden','false');return true};
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',build);else build();
+})();
+</script>
 <script id="scl-global-esc">
 /* Fix: the Fees page and class picker call esc() from the global scope, where it was never defined. */
 if(typeof window.esc!=="function"){window.esc=function(v){return String(v==null?"":v).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}}
 </script>
 <script id="scl-build-refresh">
 /* One-time refresh: clears old cached copies of the site so visitors never see an outdated gate. */
-(function(){try{var V="2026-10-01-single-gate",K="sclBuild";if(localStorage.getItem(K)===V)return;localStorage.setItem(K,V);
+(function(){try{var V="2026-10-02-redesign-v2",K="sclBuild";if(localStorage.getItem(K)===V)return;localStorage.setItem(K,V);
 var jobs=[];
 if(window.caches&&caches.keys)jobs.push(caches.keys().then(function(ks){return Promise.all(ks.map(function(x){return caches.delete(x)}))}));
 if(navigator.serviceWorker&&navigator.serviceWorker.getRegistrations)jobs.push(navigator.serviceWorker.getRegistrations().then(function(rs){return Promise.all(rs.map(function(r){return r.update().catch(function(){})}))}));
@@ -791,7 +896,7 @@ html,body{max-width:100%;overflow-x:hidden}
 
 
 
-<button class="scl-home-register-primary scl-home-action-1" onclick="pickRegistration()" type="button"><span class="icon">👤</span><b>REGISTER YOUR CHILD</b><small>Admission &amp; class registration</small></button><button class="scl-home-action-2" onclick="pickFees()" type="button"><span class="icon">💳</span><b>SCHOOL FEES &amp; PAYMENTS</b></button><button class="scl-home-action-3" onclick="openResults()" type="button"><span class="icon">📊</span><b>SCHOOL RESULTS</b></button><button class="scl-home-action-4" onclick="openMaterials()" type="button"><span class="icon">📦</span><b>SCHOOL MATERIALS</b></button><button class="scl-home-action-5" onclick="openSchoolCurriculum()" type="button"><span class="icon">📚</span><b>SCHOOL CURRICULUM</b></button><button class="scl-home-action-6" onclick="openM('sclSuiteModal');sclSuiteTab('timetable')" type="button"><span class="icon">🗓️</span><b>SCHOOL TIMETABLE</b></button><button class="scl-home-action-7" onclick="openUniformCatalogue()" type="button"><span class="icon">👕</span><b>SCHOOL UNIFORM</b></button><button class="scl-home-action-8" onclick="openSclNotice?.()" type="button"><span class="icon">🔔</span><b>SCHOOL NOTICES</b></button><button class="scl-home-action-9" onclick="openWorkers()" type="button">🧑‍🏫 WORKERS / VACANCY</button><button class="scl-home-action-10" onclick="openMyChildren()" type="button"><span class="icon">👨‍👩‍👧</span><b>MY CHILDREN</b></button></section>
+<button class="scl-home-register-primary scl-home-action-1" onclick="pickRegistration()" type="button"><span class="icon">👤</span><b>REGISTER YOUR CHILD</b><small>Admission &amp; class registration</small></button><button class="scl-home-action-2" onclick="pickFees()" type="button"><span class="icon">💳</span><b>SCHOOL FEES &amp; PAYMENTS</b></button><button class="scl-home-action-3" onclick="openResults()" type="button"><span class="icon">📊</span><b>SCHOOL RESULTS</b></button><button class="scl-home-action-4" onclick="openMaterials()" type="button"><span class="icon">📦</span><b>SCHOOL MATERIALS</b></button><button class="scl-home-action-5" onclick="openSchoolCurriculum()" type="button"><span class="icon">📚</span><b>SCHOOL CURRICULUM</b></button><button class="scl-home-action-6" onclick="openM('sclSuiteModal');sclSuiteTab('timetable')" type="button"><span class="icon">🗓️</span><b>SCHOOL TIMETABLE</b></button><button class="scl-home-action-7" onclick="openUniformCatalogue()" type="button"><span class="icon">👕</span><b>SCHOOL UNIFORM</b></button><button class="scl-home-action-8" onclick="openSclNotice?.()" type="button"><span class="icon">🔔</span><b>SCHOOL NOTICES</b></button><button class="scl-home-action-9 scl-notice-banner" id="sclVacancyBanner" onclick="openWorkers()" type="button"><span class="scl-nb-tag">📢 NOTICE</span><b id="sclVacancyText">Vacancies &amp; staff positions are open — tap to read and apply</b></button><button class="scl-home-action-10" onclick="openMyChildren()" type="button"><span class="icon">👨‍👩‍👧</span><b>MY CHILDREN</b></button></section>
 
 <section aria-hidden="true" class="admission scl-home-admission-hidden" id="admissions"></section>
 <section class="about" id="about"><div><h3>ABOUT OUR SCHOOL</h3><p>Shining Child Leaders School is committed to providing holistic education that builds character, sharpens minds and nurtures future leaders equipped with knowledge, skills and values for a better tomorrow.</p><button class="btn red" onclick="toast('School profile will be managed from the admin dashboard.')">READ MORE</button></div><div id="academics"><h3>WHY CHOOSE US?</h3><ul><li>Qualified and Experienced Teachers</li><li>Conducive Learning Environment</li><li>ICT and Computer Education</li><li>Safe and Secure Environment</li><li>School Bus Service Available</li><li>Affordable and Transparent Fees</li></ul></div><div><h3>OUR SCHOOL BUILDING</h3><div aria-label="Our School Building photo carousel" class="building-photo scl-building-carousel" data-scl-building-carousel="" role="region">
@@ -916,18 +1021,18 @@ html,body{max-width:100%;overflow-x:hidden}
 <div class="materials-body">
 <div class="materials-note"><b>Learning and technology materials catalogue.</b> Tap any material to open the related School &amp; Education marketplace search on AiSMUS. School essentials such as uniforms, shoes and bags will be added later using the school-approved images and prices.</div>
 <div class="scl-v16-material-grid">
-<a aria-label="Buy VR Headset on AiSMUS" class="scl-v16-material-link" href="https://mrodgodwin.github.io/AiSMUS/?search=VR%20Headset&amp;category=School%20%26%20Education#products" rel="noopener noreferrer" target="_blank"><article class="scl-v16-material-card"><div class="mat-icon">🥽</div><b>VR Headset</b><strong>₦30,000</strong><small>Practical experience, visualization and immersive learning.</small></article></a>
-<a aria-label="Buy Tablet on AiSMUS" class="scl-v16-material-link" href="https://mrodgodwin.github.io/AiSMUS/?search=Tablet&amp;category=School%20%26%20Education#products" rel="noopener noreferrer" target="_blank"><article class="scl-v16-material-card"><div class="mat-icon">📱</div><b>Tablet</b><strong>₦50,000</strong><small>Tests, digital skills, drawing, videos and topic practice.</small></article></a>
-<a aria-label="Buy Light Pen on AiSMUS" class="scl-v16-material-link" href="https://mrodgodwin.github.io/AiSMUS/?search=Light%20Pen&amp;category=School%20%26%20Education#products" rel="noopener noreferrer" target="_blank"><article class="scl-v16-material-card"><div class="mat-icon">🖊️</div><b>Light Pen</b><strong>₦5,400 starting</strong><small>Representative Nigerian listing; final SCL price can be updated.</small></article></a>
-<a aria-label="Buy Wireless Mouse on AiSMUS" class="scl-v16-material-link" href="https://mrodgodwin.github.io/AiSMUS/?search=Wireless%20Mouse&amp;category=School%20%26%20Education#products" rel="noopener noreferrer" target="_blank"><article class="scl-v16-material-card"><div class="mat-icon">🖱️</div><b>Wireless Mouse</b><strong>₦3,250 starting</strong><small>Representative Nigerian listing; final SCL price can be updated.</small></article></a>
-<a aria-label="Buy Smart Tag on AiSMUS" class="scl-v16-material-link" href="https://mrodgodwin.github.io/AiSMUS/?search=Smart%20Tag&amp;category=School%20%26%20Education#products" rel="noopener noreferrer" target="_blank"><article class="scl-v16-material-card"><div class="mat-icon">🏷️</div><b>Smart Tag</b><strong>₦14,999 starting</strong><small>Representative Nigerian listing; final SCL price can be updated.</small></article></a>
-<a aria-label="Buy Science Learning Kit on AiSMUS" class="scl-v16-material-link" href="https://mrodgodwin.github.io/AiSMUS/?search=Science%20Learning%20Kit&amp;category=School%20%26%20Education#products" rel="noopener noreferrer" target="_blank"><article class="scl-v16-material-card"><div class="mat-icon">🔬</div><b>Science Learning Kit</b><strong>₦10,999 starting</strong><small>Representative listing; final SCL-approved kit and price can be updated.</small></article></a>
-<a aria-label="Buy Sketchpad on AiSMUS" class="scl-v16-material-link" href="https://mrodgodwin.github.io/AiSMUS/?search=Sketchpad&amp;category=School%20%26%20Education#products" rel="noopener noreferrer" target="_blank"><article class="scl-v16-material-card"><div class="mat-icon">📒</div><b>Sketchpad</b><strong>Price to be confirmed</strong><small>School price will be added when supplied.</small></article></a>
-<a aria-label="Buy Computer Learning Kit on AiSMUS" class="scl-v16-material-link" href="https://mrodgodwin.github.io/AiSMUS/?search=Computer%20Learning%20Kit&amp;category=School%20%26%20Education#products" rel="noopener noreferrer" target="_blank"><article class="scl-v16-material-card"><div class="mat-icon">💻</div><b>Computer Learning Kit</b><strong>Price to be confirmed</strong><small>For computer and digital-skills students.</small></article></a>
-<a aria-label="Buy Art Learning Kit on AiSMUS" class="scl-v16-material-link" href="https://mrodgodwin.github.io/AiSMUS/?search=Art%20Learning%20Kit&amp;category=School%20%26%20Education#products" rel="noopener noreferrer" target="_blank"><article class="scl-v16-material-card"><div class="mat-icon">🎨</div><b>Art Learning Kit</b><strong>Price to be confirmed</strong><small>For art students and practical work.</small></article></a>
-<a aria-label="Buy Commercial Learning Kit on AiSMUS" class="scl-v16-material-link" href="https://mrodgodwin.github.io/AiSMUS/?search=Commercial%20Learning%20Kit&amp;category=School%20%26%20Education#products" rel="noopener noreferrer" target="_blank"><article class="scl-v16-material-card"><div class="mat-icon">📚</div><b>Commercial Learning Kit</b><strong>Price to be confirmed</strong><small>For commercial students and practical learning.</small></article></a>
-<a aria-label="Buy Physics Learning Kit on AiSMUS" class="scl-v16-material-link" href="https://mrodgodwin.github.io/AiSMUS/?search=Physics%20Learning%20Kit&amp;category=School%20%26%20Education#products" rel="noopener noreferrer" target="_blank"><article class="scl-v16-material-card"><div class="mat-icon">⚛️</div><b>Physics Learning Kit</b><strong>Price to be confirmed</strong><small>For physics practicals and experiments.</small></article></a>
-<a aria-label="Buy Technological and Technical Kit on AiSMUS" class="scl-v16-material-link" href="https://mrodgodwin.github.io/AiSMUS/?search=Technological%20and%20Technical%20Kit&amp;category=School%20%26%20Education#products" rel="noopener noreferrer" target="_blank"><article class="scl-v16-material-card"><div class="mat-icon">🛠️</div><b>Technological and Technical Kit</b><strong>Price to be confirmed</strong><small>For technological and technical practical learning.</small></article></a>
+<a aria-label="Buy VR Headset on AiSMUS" class="scl-v16-material-link" href="https://multipu.github.io/AiSMUS/?search=VR%20Headset&amp;category=School%20%26%20Education#products" rel="noopener noreferrer" target="_blank"><article class="scl-v16-material-card"><div class="mat-icon">🥽</div><b>VR Headset</b><strong>₦30,000</strong><small>Practical experience, visualization and immersive learning.</small></article></a>
+<a aria-label="Buy Tablet on AiSMUS" class="scl-v16-material-link" href="https://multipu.github.io/AiSMUS/?search=Tablet&amp;category=School%20%26%20Education#products" rel="noopener noreferrer" target="_blank"><article class="scl-v16-material-card"><div class="mat-icon">📱</div><b>Tablet</b><strong>₦50,000</strong><small>Tests, digital skills, drawing, videos and topic practice.</small></article></a>
+<a aria-label="Buy Light Pen on AiSMUS" class="scl-v16-material-link" href="https://multipu.github.io/AiSMUS/?search=Light%20Pen&amp;category=School%20%26%20Education#products" rel="noopener noreferrer" target="_blank"><article class="scl-v16-material-card"><div class="mat-icon">🖊️</div><b>Light Pen</b><strong>₦5,400 starting</strong><small>Representative Nigerian listing; final SCL price can be updated.</small></article></a>
+<a aria-label="Buy Wireless Mouse on AiSMUS" class="scl-v16-material-link" href="https://multipu.github.io/AiSMUS/?search=Wireless%20Mouse&amp;category=School%20%26%20Education#products" rel="noopener noreferrer" target="_blank"><article class="scl-v16-material-card"><div class="mat-icon">🖱️</div><b>Wireless Mouse</b><strong>₦3,250 starting</strong><small>Representative Nigerian listing; final SCL price can be updated.</small></article></a>
+<a aria-label="Buy Smart Tag on AiSMUS" class="scl-v16-material-link" href="https://multipu.github.io/AiSMUS/?search=Smart%20Tag&amp;category=School%20%26%20Education#products" rel="noopener noreferrer" target="_blank"><article class="scl-v16-material-card"><div class="mat-icon">🏷️</div><b>Smart Tag</b><strong>₦14,999 starting</strong><small>Representative Nigerian listing; final SCL price can be updated.</small></article></a>
+<a aria-label="Buy Science Learning Kit on AiSMUS" class="scl-v16-material-link" href="https://multipu.github.io/AiSMUS/?search=Science%20Learning%20Kit&amp;category=School%20%26%20Education#products" rel="noopener noreferrer" target="_blank"><article class="scl-v16-material-card"><div class="mat-icon">🔬</div><b>Science Learning Kit</b><strong>₦10,999 starting</strong><small>Representative listing; final SCL-approved kit and price can be updated.</small></article></a>
+<a aria-label="Buy Sketchpad on AiSMUS" class="scl-v16-material-link" href="https://multipu.github.io/AiSMUS/?search=Sketchpad&amp;category=School%20%26%20Education#products" rel="noopener noreferrer" target="_blank"><article class="scl-v16-material-card"><div class="mat-icon">📒</div><b>Sketchpad</b><strong>Price to be confirmed</strong><small>School price will be added when supplied.</small></article></a>
+<a aria-label="Buy Computer Learning Kit on AiSMUS" class="scl-v16-material-link" href="https://multipu.github.io/AiSMUS/?search=Computer%20Learning%20Kit&amp;category=School%20%26%20Education#products" rel="noopener noreferrer" target="_blank"><article class="scl-v16-material-card"><div class="mat-icon">💻</div><b>Computer Learning Kit</b><strong>Price to be confirmed</strong><small>For computer and digital-skills students.</small></article></a>
+<a aria-label="Buy Art Learning Kit on AiSMUS" class="scl-v16-material-link" href="https://multipu.github.io/AiSMUS/?search=Art%20Learning%20Kit&amp;category=School%20%26%20Education#products" rel="noopener noreferrer" target="_blank"><article class="scl-v16-material-card"><div class="mat-icon">🎨</div><b>Art Learning Kit</b><strong>Price to be confirmed</strong><small>For art students and practical work.</small></article></a>
+<a aria-label="Buy Commercial Learning Kit on AiSMUS" class="scl-v16-material-link" href="https://multipu.github.io/AiSMUS/?search=Commercial%20Learning%20Kit&amp;category=School%20%26%20Education#products" rel="noopener noreferrer" target="_blank"><article class="scl-v16-material-card"><div class="mat-icon">📚</div><b>Commercial Learning Kit</b><strong>Price to be confirmed</strong><small>For commercial students and practical learning.</small></article></a>
+<a aria-label="Buy Physics Learning Kit on AiSMUS" class="scl-v16-material-link" href="https://multipu.github.io/AiSMUS/?search=Physics%20Learning%20Kit&amp;category=School%20%26%20Education#products" rel="noopener noreferrer" target="_blank"><article class="scl-v16-material-card"><div class="mat-icon">⚛️</div><b>Physics Learning Kit</b><strong>Price to be confirmed</strong><small>For physics practicals and experiments.</small></article></a>
+<a aria-label="Buy Technological and Technical Kit on AiSMUS" class="scl-v16-material-link" href="https://multipu.github.io/AiSMUS/?search=Technological%20and%20Technical%20Kit&amp;category=School%20%26%20Education#products" rel="noopener noreferrer" target="_blank"><article class="scl-v16-material-card"><div class="mat-icon">🛠️</div><b>Technological and Technical Kit</b><strong>Price to be confirmed</strong><small>For technological and technical practical learning.</small></article></a>
 </div>
 </div>
 </div>
@@ -1328,9 +1433,9 @@ window.prepareWhatsAppAnnouncement=function(item,selectedIds){const groups=(comm
   const CHILDREN_KEY='sclParentChildrenV1', UNIFORM_KEY='sclUniformCatalogueV1';
   const demoChildren=[]; // Real child records are supplied by the authenticated SCL backend.
   const defaultUniforms=[
-    {name:'School Uniform',detail:'Official daily school uniform. Class/size availability is shown by the school.',url:'https://mrodgodwin.github.io/AiSMUS/',image:''},
-    {name:'Sports Wear',detail:'Official sports and physical education wear.',url:'https://mrodgodwin.github.io/AiSMUS/',image:''},
-    {name:'Friday Wear',detail:'Official Friday school wear where applicable.',url:'https://mrodgodwin.github.io/AiSMUS/',image:''}
+    {name:'School Uniform',detail:'Official daily school uniform. Class/size availability is shown by the school.',url:'https://multipu.github.io/AiSMUS/',image:''},
+    {name:'Sports Wear',detail:'Official sports and physical education wear.',url:'https://multipu.github.io/AiSMUS/',image:''},
+    {name:'Friday Wear',detail:'Official Friday school wear where applicable.',url:'https://multipu.github.io/AiSMUS/',image:''}
   ];
   function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
   function getChildren(){try{return JSON.parse(localStorage.getItem(CHILDREN_KEY)||'[]')}catch(e){return []}}
@@ -1381,7 +1486,7 @@ window.prepareWhatsAppAnnouncement=function(item,selectedIds){const groups=(comm
       '<div class="scl-child-card"><h4>History / Follow-up</h4>'+(timeline.length?'<div class="scl-timeline">'+timeline.map(x=>'<div class="scl-timeline-item"><b>'+esc(x.date||'Date')+'</b><div>'+esc(x.event||'')+'</div></div>').join('')+'</div>':'<p class="scl-muted">No follow-up history has been recorded.</p>')+'</div>';
   };
   window.openUniformCatalogue=function(){const m=document.getElementById('sclUniformModal');if(!m)return;renderUniforms();m.classList.add('open');m.style.display='flex';m.setAttribute('aria-hidden','false')};
-  function renderUniforms(){const box=document.getElementById('sclUniformPublicGrid');if(!box)return;box.innerHTML=getUniforms().map((u,i)=>'<a class="scl-uniform-item" href="'+esc(u.url||'https://mrodgodwin.github.io/AiSMUS/')+'" target="_blank" rel="noopener noreferrer" style="text-decoration:none;color:inherit">'+(u.image?'<img src="'+esc(u.image)+'" alt="'+esc(u.name)+'">':'<div style="height:140px;border-radius:9px;background:linear-gradient(135deg,#650007,#d9a400);display:grid;place-items:center;color:white;font-size:42px">👕</div>')+'<h4>'+esc(u.name)+'</h4><p>'+esc(u.detail||'')+'</p><b>VIEW / BUY</b></a>').join('')}
+  function renderUniforms(){const box=document.getElementById('sclUniformPublicGrid');if(!box)return;box.innerHTML=getUniforms().map((u,i)=>'<a class="scl-uniform-item" href="'+esc(u.url||'https://multipu.github.io/AiSMUS/')+'" target="_blank" rel="noopener noreferrer" style="text-decoration:none;color:inherit">'+(u.image?'<img src="'+esc(u.image)+'" alt="'+esc(u.name)+'">':'<div style="height:140px;border-radius:9px;background:linear-gradient(135deg,#650007,#d9a400);display:grid;place-items:center;color:white;font-size:42px">👕</div>')+'<h4>'+esc(u.name)+'</h4><p>'+esc(u.detail||'')+'</p><b>VIEW / BUY</b></a>').join('')}
   window.openUniformAdmin=function(){
     const auth=typeof getAuth==='function'?getAuth():null;
     const roles=(auth&&auth.roles)||[], perms=(auth&&auth.permissions)||[];
