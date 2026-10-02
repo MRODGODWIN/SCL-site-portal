@@ -10085,4 +10085,371 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 })();
 
 </script>
+
+<!-- SCL FINAL UI/UX CONTRAST + ICON POLISH — 2026-10-02 -->
+<style id="scl-final-contrast-icons">
+:root{
+  --ui-light:#ffffff;
+  --ui-dark:#160a16;
+  --ui-maroon:#650007;
+  --ui-gold:#f2ae00;
+  --ui-green:#126b3a;
+  --ui-line:rgba(101,0,7,.16);
+  --ui-shadow:0 10px 28px rgba(42,10,25,.12);
+}
+html body{
+  -webkit-text-stroke:0!important;
+}
+html body *{
+  -webkit-text-stroke:0!important;
+}
+html body h1,html body h2,html body h3,html body h4,html body h5,
+html body p,html body span,html body small,html body b,html body strong,
+html body label,html body li,html body td,html body th,html body a,
+html body button,html body input,html body select,html body textarea{
+  text-shadow:none!important;
+}
+/* Text must never use the old black keyline/outline effect. */
+html body .scl-profile-shell *,
+html body #sclModernProfileModal *,
+html body #sclAttendanceModal *,
+html body #sclBranchAdminModal *,
+html body #sclParentChildModal *,
+html body .scl-role-panel *,
+html body .scl-role-action *,
+html body .scl-att-card *,
+html body .scl-rank-card *,
+html body .scl-rank-cycle *{
+  -webkit-text-stroke:0!important;
+  text-shadow:none!important;
+}
+/* Clear light surfaces = dark text. */
+html body .scl-profile-meta-grid>div,
+html body .scl-profile-shell .card,
+html body .scl-modern-profile-body,
+html body .scl-role-panel,
+html body .scl-role-action,
+html body .scl-att-card,
+html body .scl-att-branch,
+html body .scl-rank-card,
+html body .scl-rank-cycle,
+html body .scl-admin-box,
+html body .scl-child-card,
+html body .scl-child-item,
+html body .scl-profile-passkey,
+html body .scl-profile-search-hit,
+html body .scl-profile-toolbar~section,
+html body .scl-parent-claim-card .form,
+html body .scl-parent-claim-choice,
+html body .scl-parent-claim-warning{
+  color:var(--ui-dark)!important;
+}
+/* Dark surfaces = white text; gold is used only where it remains readable. */
+html body .scl-profile-toolbar,
+html body .scl-profile-toolbar button,
+html body .scl-modern-profile-head,
+html body .scl-role-panel.dark,
+html body .scl-profile-cover.dark{
+  color:#fff!important;
+}
+html body .scl-profile-toolbar button{color:#fff!important}
+html body .scl-profile-toolbar button.scl-profile-primary,
+html body .scl-profile-toolbar button:hover{
+  color:var(--ui-dark)!important;
+}
+/* Headings/values inside light profile cards stay dark and crisp. */
+html body .scl-profile-meta-grid span{color:#5b3b18!important}
+html body .scl-profile-meta-grid b{color:#160a16!important}
+html body .scl-modern-profile-body h1,
+html body .scl-modern-profile-body h2,
+html body .scl-modern-profile-body h3,
+html body .scl-modern-profile-body h4,
+html body .scl-modern-profile-body h5,
+html body .scl-modern-profile-body p,
+html body .scl-modern-profile-body li,
+html body .scl-modern-profile-body td,
+html body .scl-modern-profile-body label,
+html body .scl-modern-profile-body small{ text-shadow:none!important; }
+/* Profile cards get cleaner depth and smoother movement. */
+html body .scl-profile-meta-grid>div,
+html body .scl-role-panel,
+html body .scl-role-action,
+html body .scl-att-card,
+html body .scl-rank-card{
+  border-radius:15px!important;
+  transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease,background .2s ease;
+}
+html body .scl-profile-meta-grid>div:hover,
+html body .scl-role-panel:hover,
+html body .scl-role-action:hover,
+html body .scl-att-card:hover,
+html body .scl-rank-card:hover{
+  transform:translateY(-2px);
+  box-shadow:0 12px 28px rgba(42,10,25,.14)!important;
+}
+/* Buttons: strong contrast, no text outline, tactile feedback. */
+html body button,
+html body .btn,
+html body .scl-btn,
+html body .scl-shortcut-item,
+html body .scl-parent-claim-choice button,
+html body .options button{
+  -webkit-text-stroke:0!important;
+  text-shadow:none!important;
+  transition:transform .16s ease,box-shadow .16s ease,filter .16s ease,background .16s ease;
+}
+html body button:active,
+html body .btn:active,
+html body .scl-btn:active,
+html body .scl-shortcut-item:active{
+  transform:translateY(1px) scale(.985);
+}
+html body .red,html body .scl-btn,
+html body .scl-home-register-primary,
+html body .scl-shortcut-item.is-dark{
+  background:linear-gradient(135deg,#650007,#a40017)!important;
+  color:#fff!important;
+}
+html body .gold,html body .scl-btn.alt{
+  background:linear-gradient(135deg,#f2ae00,#ffd45a)!important;
+  color:#241000!important;
+}
+html body .outline{
+  background:#fff!important;
+  color:#650007!important;
+  border:1.5px solid #650007!important;
+}
+/* Inputs/selects/areas: readable dark text on white writing surfaces. */
+html body input,html body select,html body textarea{
+  color:#160a16!important;
+  background:#fff!important;
+  -webkit-text-stroke:0!important;
+  text-shadow:none!important;
+}
+html body input::placeholder,html body textarea::placeholder{
+  color:#655b61!important;
+  opacity:1!important;
+}
+/* Add visual icons to form labels without changing their text. */
+html body .field label,
+html body .scl-form-grid label,
+html body #feesModal label,
+html body .scl-uniform-form label{
+  position:relative;
+  display:flex;
+  align-items:center;
+  gap:7px;
+  color:#160a16!important;
+  text-shadow:none!important;
+}
+html body .field label::before,
+html body .scl-form-grid label::before,
+html body #feesModal label::before,
+html body .scl-uniform-form label::before{
+  content:"✎";
+  width:22px;height:22px;flex:0 0 22px;
+  display:grid;place-items:center;
+  border-radius:7px;
+  background:#650007;color:#fff;
+  font-size:12px;font-weight:900;
+}
+html body label[for*="email" i]::before,
+html body label:has(+ input[type="email"])::before{content:"✉"}
+html body label[for*="phone" i]::before,
+html body label:has(+ input[type="tel"])::before{content:"☎"}
+html body label[for*="name" i]::before{content:"👤"}
+html body label[for*="date" i]::before,
+html body label:has(+ input[type="date"])::before{content:"▣"}
+html body label[for*="photo" i]::before,
+html body label[for*="image" i]::before{content:"▧"}
+html body label[for*="class" i]::before,
+html body label[for*="subject" i]::before{content:"▤"}
+html body label[for*="password" i]::before,
+html body label:has(+ input[type="password"])::before{content:"◆"}
+/* Quick-action buttons: icon badge even when the original button had no icon. */
+html body .scl-home-action-clean>button .icon{
+  color:#fff!important;
+  text-shadow:none!important;
+}
+html body .scl-home-action-clean>button b,
+html body .scl-home-action-clean>button small{
+  text-shadow:none!important;
+}
+html body .scl-shortcut-item,
+html body .scl-shortcut-item small{
+  text-shadow:none!important;
+}
+html body .scl-shortcut-item::first-letter{font-size:1.05em}
+/* Child registration flow. */
+html body #sclParentChildModal .mh,
+html body #sclParentChildModal .mh h3{
+  color:#fff!important;
+  text-shadow:none!important;
+}
+html body #sclParentChildModal .mh button{
+  color:#fff!important;
+}
+html body #sclParentChildModal .scl-parent-claim-choice button{
+  background:#fff!important;
+  color:#650007!important;
+  border:1px solid rgba(101,0,7,.2)!important;
+  border-radius:14px!important;
+  box-shadow:0 5px 16px rgba(42,10,25,.08);
+  min-height:54px;
+}
+html body #sclParentChildModal .scl-parent-claim-choice button:hover{
+  background:#fff4d8!important;
+  color:#650007!important;
+  transform:translateY(-2px);
+}
+/* "Free" / no-cost action labels get a clear badge. */
+html body [data-shortcut-label*="free" i],
+html body button[title*="free" i],
+html body a[title*="free" i]{
+  position:relative;
+}
+html body [data-shortcut-label*="free" i]::after,
+html body button[title*="free" i]::after,
+html body a[title*="free" i]::after{
+  content:"FREE";
+  display:inline-grid;
+  place-items:center;
+  margin-left:6px;
+  padding:2px 6px;
+  border-radius:999px;
+  background:#126b3a;
+  color:#fff;
+  font-size:9px;
+  font-weight:900;
+  letter-spacing:.04em;
+  vertical-align:middle;
+}
+/* Keep accessibility focus rings: these are not text outlines and remain intentional. */
+html body :is(button,a,input,select,textarea):focus-visible{
+  outline:3px solid #f2ae00!important;
+  outline-offset:2px!important;
+}
+/* Mobile: larger tap targets and less visual crowding. */
+@media(max-width:600px){
+  html body .scl-profile-toolbar button{min-height:44px;font-size:11px}
+  html body .scl-shortcut-item{min-height:58px;padding:12px 10px}
+  html body .scl-parent-claim-choice button{min-height:56px}
+  html body .field input,html body .field select,html body .field textarea{min-height:46px}
+}
+@media(prefers-reduced-motion:reduce){
+  html body *,html body *::before,html body *::after{
+    transition-duration:.01ms!important;
+    animation-duration:.01ms!important;
+  }
+}
+</style>
+<script id="scl-final-contrast-icons-js">
+(function(){
+  'use strict';
+  var ICONS=[
+    [/register your child/i,'👨‍👩‍👧'],
+    [/register|registration|admission/i,'📝'],
+    [/free/i,'🆓'],
+    [/profile/i,'👤'],
+    [/home/i,'⌂'],
+    [/attendance/i,'✓'],
+    [/fee|payment/i,'💳'],
+    [/result|certificate/i,'📊'],
+    [/material|book|curriculum|scheme/i,'📚'],
+    [/uniform/i,'👕'],
+    [/gallery|photo|image/i,'🖼'],
+    [/message|contact|support/i,'💬'],
+    [/search/i,'⌕'],
+    [/save|submit|send/i,'➤'],
+    [/edit|update/i,'✎'],
+    [/delete|remove/i,'⌫'],
+    [/close|cancel|back/i,'‹'],
+    [/next|continue/i,'›'],
+    [/download/i,'⇩'],
+    [/upload/i,'⇧'],
+    [/login|sign in/i,'↪'],
+    [/logout|sign out/i,'↩'],
+    [/teacher|staff/i,'🎓'],
+    [/parent|guardian/i,'👨‍👩‍👧'],
+    [/student|child/i,'🧒']
+  ];
+  function labelOf(el){
+    return ((el.getAttribute('aria-label')||'')+' '+(el.getAttribute('title')||'')+' '+(el.textContent||'')).replace(/\s+/g,' ').trim();
+  }
+  function iconFor(t){
+    for(var i=0;i<ICONS.length;i++) if(ICONS[i][0].test(t)) return ICONS[i][1];
+    return '•';
+  }
+  function addIcons(){
+    document.querySelectorAll('button,.scl-shortcut-item,.scl-btn,.btn').forEach(function(b){
+      if(b.dataset.sclIconDone)return;
+      if(b.querySelector('.scl-auto-icon,.icon')){b.dataset.sclIconDone='1';return}
+      var t=labelOf(b);
+      if(!t)return;
+      var sp=document.createElement('span');
+      sp.className='scl-auto-icon';
+      sp.setAttribute('aria-hidden','true');
+      sp.textContent=iconFor(t);
+      sp.style.cssText='display:inline-grid;place-items:center;width:1.35em;height:1.35em;margin-right:6px;vertical-align:-.18em;font-size:1.05em;line-height:1;filter:none';
+      b.insertBefore(sp,b.firstChild);
+      b.dataset.sclIconDone='1';
+    });
+  }
+  /*
+   * For text-only elements inside the profile, choose white on genuinely dark
+   * surfaces and dark ink on light surfaces. This prevents inherited outline/
+   * shadow tricks from being used for readability.
+   */
+  function rgb(c){
+    var m=(c||'').match(/rgba?\((\d+)[,\s]+(\d+)[,\s]+(\d+)/i);
+    return m?[+m[1],+m[2],+m[3]]:null;
+  }
+  function luminance(c){
+    var r=c[0]/255,g=c[1]/255,b=c[2]/255;
+    r=r<=.03928?r/12.92:Math.pow((r+.055)/1.055,2.4);
+    g=g<=.03928?g/12.92:Math.pow((g+.055)/1.055,2.4);
+    b=b<=.03928?b/12.92:Math.pow((b+.055)/1.055,2.4);
+    return .2126*r+.7152*g+.0722*b;
+  }
+  function contrastProfile(){
+    document.querySelectorAll('.scl-modern-profile-body, .scl-profile-shell, #sclParentChildModal .form').forEach(function(root){
+      root.querySelectorAll('p,span,small,b,strong,em,li,td,th,label,h1,h2,h3,h4,h5').forEach(function(el){
+        if(el.children.length && !/^(b|strong)$/i.test(el.tagName))return;
+        var node=el,parent=root,found=null;
+        while(node && node!==document.body){
+          var cs=getComputedStyle(node);
+          var c=rgb(cs.backgroundColor);
+          if(c && luminance(c)>.001){found=c;break}
+          node=node.parentElement;
+        }
+        if(!found)return;
+        el.style.webkitTextStroke='0';
+        el.style.textShadow='none';
+        el.style.color=luminance(found)<.38?'#ffffff':'#160a16';
+      });
+    });
+  }
+  function polish(){
+    addIcons();
+    contrastProfile();
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',polish);
+  else polish();
+  setTimeout(polish,600);
+  setTimeout(polish,1800);
+  if(window.MutationObserver){
+    var mo=new MutationObserver(function(){polish()});
+    mo.observe(document.body,{childList:true,subtree:true});
+  }
+  /* Force a fresh build after this UI layer is installed. */
+  try{
+    var K='sclFinalUiContrastIcons';
+    if(localStorage.getItem(K)!=='2026-10-02-v1'){
+      localStorage.setItem(K,'2026-10-02-v1');
+      setTimeout(function(){try{location.reload()}catch(e){}},120);
+    }
+  }catch(e){}
+})();
+</script>
+
 </body></html>
